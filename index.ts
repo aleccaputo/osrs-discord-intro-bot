@@ -3,7 +3,6 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const serverId = process.env.SERVER;
-
 const client = new Discord.Client();
 
 client.once('ready', () => {
