@@ -51,7 +51,7 @@ client.on('message', async (message) => {
                 const server = client.guilds.cache.find(guild => guild.id === serverId)
                 if (server) {
                     try {
-                        const username = splitMessage.slice(0, 1).join(" ");
+                        const username = splitMessage.slice(1).join(" ");
                         await server.member(message.author)?.setNickname(username);
                         await message.channel.send("Great! Your name is now set in the discord server!\n Have you been accepted into the in-game clan system? Reply yes or no.")
                     } catch (e) {
