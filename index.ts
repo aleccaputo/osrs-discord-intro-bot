@@ -21,6 +21,32 @@ Joined: [Date you joined the clan]
 Reference: [Who told you about the clan]\`\`\``)
 }
 
+const addMemberToWiseOldMan = async(inGameName: string): Promise<boolean | null> => {
+    if (!process.env.WISE_OLD_MAN_GROUP_ID || !process.env.WISE_OLD_MAN_VERIFICATION_CODE) {
+        return null;
+    }
+    const body = {
+        verificationCode: process.env.WISE_OLD_MAN_VERIFICATION_CODE,
+        members: {
+            username: inGameName,
+            role: 'member'
+        }
+    };
+
+    try {
+        await fetch(`https://api.wiseoldman.net/groups/${process.env.WISE_OLD_MAN_GROUP_ID}/add-members`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 client.on('message', async (message) => {
     // don't respond to messages from self
     if (message.author.id === client.user?.id) {
@@ -32,6 +58,8 @@ client.on('message', async (message) => {
             await message.channel.send("Looks like you're not in the server.")
             return;
         }
+
+        const mods = server.members.cache.filter(member => member.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID));
         const content = message.content.toLocaleLowerCase();
         if (content === 'yes')
         {
@@ -54,7 +82,6 @@ client.on('message', async (message) => {
                     guildMember?.roles.remove(process.env.INTRO_ROLE_ID);
                 }
                 // message the mods to inform them
-                const mods = server.members.cache.filter(member => member.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID));
                 mods.forEach(mod => mod.send(`Please add <@${message.author.id}> to the in game clan`));
                 await message.channel.send("No problem, we've messaged the mods and will get you in ASAP")
                 await sendLastMessage(message.channel);
@@ -73,6 +100,10 @@ client.on('message', async (message) => {
                         const username = splitMessage.slice(1).join(" ");
                         await server.member(message.author)?.setNickname(username);
                         await message.channel.send("Great! Your name is now set in the discord server!\n Have you been accepted into the in-game clan system? Reply yes or no.")
+                        const response = await addMemberToWiseOldMan(username);
+                        if (!response) {
+                            mods.forEach(mod => mod.send(`Unable to add <@${message.author.id}> to wise old man.`));
+                        }
                     } catch (e) {
                         await message.channel.send("Hmmm, something went wrong, please try again.")
                     }
