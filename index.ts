@@ -1,5 +1,6 @@
 import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
+import {DMChannel} from "discord.js";
 dotenv.config();
 
 const serverId = process.env.SERVER;
@@ -10,6 +11,15 @@ client.once('ready', () => {
 });
 
 client.login(process.env.TOKEN);
+
+const sendLastMessage = async (channel: DMChannel) => {
+    if (process.env.INTRO_CHANNEL_ID && process.env.TIME_IN_CLAN_CHANNEL_ID)
+    await channel.send(`Please read the <#${process.env.INTRO_CHANNEL_ID}> to get yourself familiar with the clan.\n
+    Next go to <#${process.env.TIME_IN_CLAN_CHANNEL_ID}> and send a message in the following format:\n
+    \`\`\`IGN: [Your OSRS in game name]\n
+    Joined: [Date you joined the clan]\n
+    Reference: [Who told you about the clan]\`\`\``)
+}
 
 client.on('message', async (message) => {
     // don't respond to messages from self
@@ -27,18 +37,27 @@ client.on('message', async (message) => {
         {
             const guildMember = server.member(message.author);
             if (process.env.INTRO_ROLE_ID) {
-                guildMember?.roles.add(process.env.INTRO_ROLE_ID)
+                guildMember?.roles.add(process.env.INTRO_ROLE_ID);
+                // dont have into role and not in clan role at the same time
+                if (process.env.NOT_IN_CLAN_ROLE_ID) {
+                    guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
+                }
                 await message.channel.send("Great, you're all set!")
+                await sendLastMessage(message.channel);
             }
             return;
         } else if (content === 'no') {
             const guildMember = server.member(message.author);
             if (process.env.NOT_IN_CLAN_ROLE_ID) {
                 guildMember?.roles.add(process.env.NOT_IN_CLAN_ROLE_ID)
+                if (process.env.INTRO_ROLE_ID) {
+                    guildMember?.roles.remove(process.env.INTRO_ROLE_ID);
+                }
                 // message the mods to inform them
                 const mods = server.members.cache.filter(member => member.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID));
                 mods.forEach(mod => mod.send(`Please add <@${message.author.id}> to the in game clan`));
                 await message.channel.send("No problem, we've messaged the mods and will get you in ASAP")
+                await sendLastMessage(message.channel);
                 return;
             }
         } else {
