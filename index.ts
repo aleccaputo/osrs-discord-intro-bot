@@ -1,6 +1,7 @@
 import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
 import {DMChannel} from "discord.js";
+import fetch from 'node-fetch';
 dotenv.config();
 
 const serverId = process.env.SERVER;
@@ -25,16 +26,19 @@ const addMemberToWiseOldMan = async(inGameName: string): Promise<boolean | null>
     if (!process.env.WISE_OLD_MAN_GROUP_ID || !process.env.WISE_OLD_MAN_VERIFICATION_CODE) {
         return null;
     }
+
     const body = {
         verificationCode: process.env.WISE_OLD_MAN_VERIFICATION_CODE,
-        members: {
-            username: inGameName,
-            role: 'member'
-        }
+        members: [
+            {
+                username: inGameName,
+                role: 'member'
+            }
+        ]
     };
 
     try {
-        await fetch(`https://api.wiseoldman.net/groups/${process.env.WISE_OLD_MAN_GROUP_ID}/add-members`, {
+        await fetch(`https://api.wiseoldman.net/groups/${parseInt(process.env.WISE_OLD_MAN_GROUP_ID, 10)}/add-members`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -43,6 +47,7 @@ const addMemberToWiseOldMan = async(inGameName: string): Promise<boolean | null>
         });
         return true;
     } catch (e) {
+        console.error(e);
         return false;
     }
 }
