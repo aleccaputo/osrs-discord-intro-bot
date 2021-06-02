@@ -14,11 +14,11 @@ client.login(process.env.TOKEN);
 
 const sendLastMessage = async (channel: DMChannel) => {
     if (process.env.INTRO_CHANNEL_ID && process.env.TIME_IN_CLAN_CHANNEL_ID)
-    await channel.send(`Please read the <#${process.env.INTRO_CHANNEL_ID}> to get yourself familiar with the clan.\n
-    Next go to <#${process.env.TIME_IN_CLAN_CHANNEL_ID}> and send a message in the following format:\n
-    \`\`\`IGN: [Your OSRS in game name]\n
-    Joined: [Date you joined the clan]\n
-    Reference: [Who told you about the clan]\`\`\``)
+    await channel.send(`Please read the <#${process.env.INTRO_CHANNEL_ID}> to get yourself familiar with the clan.
+Next go to <#${process.env.TIME_IN_CLAN_CHANNEL_ID}> and send a message in the following format:
+\`\`\`IGN: [Your OSRS in game name]
+Joined: [Date you joined the clan]
+Reference: [Who told you about the clan]\`\`\``)
 }
 
 client.on('message', async (message) => {
