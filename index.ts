@@ -2,16 +2,28 @@ import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
 import {DMChannel} from "discord.js";
 import fetch from 'node-fetch';
+import {
+    initializeReportMembersEligibleForRankUp,
+    scheduleReportMembersEligibleForRankUp
+} from "./services/ReportingService";
 dotenv.config();
 
 const serverId = process.env.SERVER;
 const client = new Discord.Client();
 
-client.once('ready', () => {
+client.login(process.env.TOKEN);
+
+client.once('ready', async () => {
     console.log('ready');
+    try {
+        await initializeReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
+        scheduleReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
+    } catch (e) {
+        console.error(e);
+        console.error("Failed to check ranks, check env vars?")
+    }
 });
 
-client.login(process.env.TOKEN);
 
 const sendLastMessage = async (channel: DMChannel) => {
     if (process.env.INTRO_CHANNEL_ID && process.env.TIME_IN_CLAN_CHANNEL_ID)
