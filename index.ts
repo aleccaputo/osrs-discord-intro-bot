@@ -141,4 +141,18 @@ client.on('guildMemberAdd', async (member) => {
         }
     }
     await member.send("Welcome to the clan! Reply !ign [Your In Game Name]\n For example `!ign Thugga`");
-})
+});
+
+client.on('guildMemberRemove', async (member) => {
+    if (process.env.REPORTING_CHANNEL_ID) {
+        const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
+        if (reportingChannel && reportingChannel.isText()) {
+            try {
+                await reportingChannel.send(`<@${member.id}> has left the server. OSRS name is ${member.nickname}`);
+            } catch (e) {
+                // still attempt to PM the user if we weren't able to send the message to the channel
+                console.log("unable to send server leave message")
+            }
+        }
+    }
+});
