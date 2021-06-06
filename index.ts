@@ -3,7 +3,6 @@ import * as dotenv from 'dotenv';
 import {DMChannel} from "discord.js";
 import fetch from 'node-fetch';
 import {
-    initializeReportMembersEligibleForRankUp,
     scheduleReportMembersEligibleForRankUp
 } from "./services/ReportingService";
 dotenv.config();
