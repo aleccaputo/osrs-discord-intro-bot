@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import {DMChannel} from "discord.js";
 import fetch from 'node-fetch';
 import {
-    scheduleReportMembersEligibleForRankUp
+    scheduleReportMembersEligibleForRankUp, scheduleReportMembersNotInClan
 } from "./services/ReportingService";
 dotenv.config();
 
@@ -16,9 +16,10 @@ client.once('ready', async () => {
     console.log('ready');
     try {
         scheduleReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
+        scheduleReportMembersNotInClan(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.NOT_IN_CLAN_ROLE_ID ?? '')
     } catch (e) {
         console.error(e);
-        console.error("Failed to check ranks, check env vars?")
+        console.error("failed to initialize reporting tasks");
     }
 });
 
@@ -114,7 +115,7 @@ client.on('message', async (message) => {
                     try {
                         const username = splitMessage.slice(1).join(" ");
                         await server.member(message.author)?.setNickname(username);
-                        await message.channel.send("Great! Your name is now set in the discord server!\n Have you been accepted into the in-game clan system? Reply yes or no.")
+                        await message.channel.send("Great! Your name is now set in the discord server!\n Have you been accepted into the in-game clan system?\nReply `yes` or `no`.")
                         const response = await addMemberToWiseOldMan(username);
                         if (!response) {
                             mods.forEach(mod => mod.send(`Unable to add <@${message.author.id}> to wise old man.`));
@@ -146,7 +147,7 @@ client.on('guildMemberRemove', async (member) => {
         const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
         if (reportingChannel && reportingChannel.isText()) {
             try {
-                await reportingChannel.send(`<@${member.id}> has left the server. OSRS name is ${member.nickname}`);
+                await reportingChannel.send(`<@${member.id}> has left the server. OSRS name is ${member.nickname}.\nCheck the in game clan to see if they are still there. If not, consider removing them from wise old man.`);
             } catch (e) {
                 // still attempt to PM the user if we weren't able to send the message to the channel
                 console.log("unable to send server leave message")
