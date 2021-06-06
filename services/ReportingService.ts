@@ -59,7 +59,11 @@ export const initializeReportMembersEligibleForRankUp = async (client: Client, r
 }
 
 export const scheduleReportMembersEligibleForRankUp = (client: Client, reportingChannelId: string, serverId: string) => {
-    schedule('0 17 * * *',  () => {
-        initializeReportMembersEligibleForRankUp(client, reportingChannelId, serverId)
+    schedule('0 17 * * *',  async () => {
+        try {
+            await initializeReportMembersEligibleForRankUp(client, reportingChannelId, serverId)
+        } catch (e) {
+            console.log(e);
+        }
     });
 }

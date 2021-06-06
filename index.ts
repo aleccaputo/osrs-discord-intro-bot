@@ -16,7 +16,6 @@ client.login(process.env.TOKEN);
 client.once('ready', async () => {
     console.log('ready');
     try {
-        await initializeReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
         scheduleReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
     } catch (e) {
         console.error(e);
