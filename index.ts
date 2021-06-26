@@ -147,7 +147,11 @@ client.on('guildMemberRemove', async (member) => {
         const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
         if (reportingChannel && reportingChannel.isText()) {
             try {
-                await reportingChannel.send(`<@${member.id}> has left the server. ${member.nickname ? 'OSRS name is ${member.nickname}.\nCheck the in game clan to see if they are still there. If not, consider removing them from wise old man.' : ''}`);
+                let message = `<@${member.id}> has left the server.`;
+                if (member.nickname) {
+                    message += ` OSRS name is ${member.nickname}.\nCheck the in game clan to see if they are still there. If not, consider removing them from wise old man.`
+                }
+                await reportingChannel.send(message);
             } catch (e) {
                 // still attempt to PM the user if we weren't able to send the message to the channel
                 console.log("unable to send server leave message")
