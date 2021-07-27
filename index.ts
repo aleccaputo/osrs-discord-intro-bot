@@ -24,14 +24,14 @@ client.once('ready', async () => {
 });
 
 
-const sendLastMessage = async (channel: DMChannel) => {
+/*const sendLastMessage = async (channel: DMChannel) => {
     if (process.env.INTRO_CHANNEL_ID && process.env.TIME_IN_CLAN_CHANNEL_ID)
     await channel.send(`Please read the <#${process.env.INTRO_CHANNEL_ID}> to get yourself familiar with the clan.
 Next go to <#${process.env.TIME_IN_CLAN_CHANNEL_ID}> and send a message in the following format:
 \`\`\`IGN: [Your OSRS in game name]
 Joined: [Date you joined the clan]
 Reference: [Who told you about the clan]\`\`\``)
-}
+}*/
 
 const addMemberToWiseOldMan = async(inGameName: string): Promise<boolean | null> => {
     if (!process.env.WISE_OLD_MAN_GROUP_ID || !process.env.WISE_OLD_MAN_VERIFICATION_CODE) {
@@ -87,7 +87,7 @@ client.on('message', async (message) => {
                     guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
                 }
                 await message.channel.send("Great, you're all set!")
-                await sendLastMessage(message.channel);
+                // await sendLastMessage(message.channel);
             }
             return;
         } else if (content === 'no') {
@@ -100,7 +100,7 @@ client.on('message', async (message) => {
                 // message the mods to inform them
                 mods.forEach(mod => mod.send(`Please add <@${message.author.id}> to the in game clan`));
                 await message.channel.send("No problem, we've messaged the mods and will get you in ASAP")
-                await sendLastMessage(message.channel);
+                // await sendLastMessage(message.channel);
                 return;
             }
         } else {
