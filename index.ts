@@ -1,10 +1,13 @@
 import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
-import {DMChannel} from "discord.js";
 import fetch from 'node-fetch';
 import {
     scheduleReportMembersEligibleForRankUp, scheduleReportMembersNotInClan
 } from "./services/ReportingService";
+import {Rules} from "./services/constants/rules";
+import {ApplicationQuestions} from "./services/constants/application-questions";
+import {sendQuestions} from "./services/ApplicationService";
+import {parseServerCommand} from "./services/MessageHelpers";
 dotenv.config();
 
 const serverId = process.env.SERVER;
@@ -22,16 +25,6 @@ client.once('ready', async () => {
         console.error("failed to initialize reporting tasks");
     }
 });
-
-
-/*const sendLastMessage = async (channel: DMChannel) => {
-    if (process.env.INTRO_CHANNEL_ID && process.env.TIME_IN_CLAN_CHANNEL_ID)
-    await channel.send(`Please read the <#${process.env.INTRO_CHANNEL_ID}> to get yourself familiar with the clan.
-Next go to <#${process.env.TIME_IN_CLAN_CHANNEL_ID}> and send a message in the following format:
-\`\`\`IGN: [Your OSRS in game name]
-Joined: [Date you joined the clan]
-Reference: [Who told you about the clan]\`\`\``)
-}*/
 
 const addMemberToWiseOldMan = async(inGameName: string): Promise<boolean | null> => {
     if (!process.env.WISE_OLD_MAN_GROUP_ID || !process.env.WISE_OLD_MAN_VERIFICATION_CODE) {
@@ -63,65 +56,48 @@ const addMemberToWiseOldMan = async(inGameName: string): Promise<boolean | null>
     }
 }
 
+
 client.on('message', async (message) => {
     // don't respond to messages from self
     if (message.author.id === client.user?.id) {
         return;
     }
-    if (message.channel.type === "dm") {
-        const server = client.guilds.cache.find(guild => guild.id === serverId);
-        if (!server) {
-            await message.channel.send("Looks like you're not in the server.")
-            return;
-        }
+    const server = client.guilds.cache.find(guild => guild.id === serverId);
+    if (!server) {
+        await message.channel.send("Looks like you're not in the server.")
+        return;
+    }
+    const mods = server.members.cache.filter(member => member.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID));
 
-        const mods = server.members.cache.filter(member => member.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID));
-        const content = message.content.toLocaleLowerCase();
-        if (content === 'yes')
-        {
-            const guildMember = server.member(message.author);
-            if (process.env.INTRO_ROLE_ID) {
-                guildMember?.roles.add(process.env.INTRO_ROLE_ID);
-                // dont have into role and not in clan role at the same time
-                if (process.env.NOT_IN_CLAN_ROLE_ID) {
-                    guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
-                }
-                await message.channel.send("Great, you're all set!")
-                // await sendLastMessage(message.channel);
+    if (message.channel.type === "dm") {
+        // they've agreed to the rules, send out the application questions
+        const {command} = parseServerCommand(message.content);
+        if (command === '!agree') {
+            await message.channel.send(`Great! I will now send you a series of ${ApplicationQuestions.length} questions. Please respond to each one in a single message. This will be your application.
+            The messages will be sent in this DM and you will respond to each one here by sending a message back.`)
+            if(process.env.AWAITING_APPROVAL_CHANNEL_ID) {
+                sendQuestions(message, server, client.channels.cache.get(process.env.AWAITING_APPROVAL_CHANNEL_ID));
             }
-            return;
-        } else if (content === 'no') {
-            const guildMember = server.member(message.author);
-            if (process.env.NOT_IN_CLAN_ROLE_ID) {
-                guildMember?.roles.add(process.env.NOT_IN_CLAN_ROLE_ID)
-                if (process.env.INTRO_ROLE_ID) {
-                    guildMember?.roles.remove(process.env.INTRO_ROLE_ID);
-                }
-                // message the mods to inform them
-                mods.forEach(mod => mod.send(`Please add <@${message.author.id}> to the in game clan`));
-                await message.channel.send("No problem, we've messaged the mods and will get you in ASAP")
-                // await sendLastMessage(message.channel);
-                return;
-            }
-        } else {
-            const splitMessage = content.length ? content.split(' ') : [];
-            if (splitMessage.length < 2 || !splitMessage[0]?.startsWith('!')) {
-                await message.channel.send("Looks like there was a problem with your message. Make sure it is at least 2 words, the first being !ign followed by you Oldschool RuneScape name")
-                return;
-            }
-            if (splitMessage[0].toLocaleLowerCase() === '!ign') {
-                const server = client.guilds.cache.find(guild => guild.id === serverId)
-                if (server) {
-                    try {
-                        const username = splitMessage.slice(1).join(" ");
-                        await server.member(message.author)?.setNickname(username);
-                        await message.channel.send("Great! Your name is now set in the discord server!\n Have you been accepted into the in-game clan system?\nReply `yes` or `no`.")
-                        const response = await addMemberToWiseOldMan(username);
-                        if (!response) {
-                            mods.forEach(mod => mod.send(`Unable to add <@${message.author.id}> to wise old man.`));
+        }
+    } else {
+        // Accept application for user. must be from a mod and in this channel
+        if (message.channel.id === process.env.AWAITING_APPROVAL_CHANNEL_ID && mods.some(x => x.id === message.member?.id)) {
+            const {command, context} = parseServerCommand(message.content);
+            if (command === '!confirm' && context) {
+                // this is returned in the format <!@12345>, so we need to get rid of all the special chars
+                const user = client.users.cache.get(context.replace(/[^0-9]/g, ''));
+                if (user) {
+                    const guildMember = server.member(user);
+                    if (process.env.NOT_IN_CLAN_ROLE_ID && process.env.RANK_ONE_ID) {
+                        guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
+                        guildMember?.roles.add(process.env.RANK_ONE_ID);
+                        const ign = guildMember?.nickname;
+                        if (ign) {
+                            const response = await addMemberToWiseOldMan(ign);
+                            if (!response) {
+                                mods.forEach(mod => mod.send(`Unable to add <@${message.author.id}> to wise old man.`));
+                            }
                         }
-                    } catch (e) {
-                        await message.channel.send("Hmmm, something went wrong, please try again.")
                     }
                 }
             }
@@ -130,16 +106,13 @@ client.on('message', async (message) => {
 });
 
 client.on('guildMemberAdd', async (member) => {
-    const welcomeChannel = client.channels.cache.get(process.env.WELCOME_CHANNEL_ID ?? '');
-    if (welcomeChannel && welcomeChannel.isText()) {
-        try {
-            await welcomeChannel.send(`Welcome <@${member.id}>! Keep an eye out for a DM to complete your registration!`);
-        } catch (e) {
-            // still attempt to PM the user if we weren't able to send the message to the channel
-            console.warn("Unable to send welcome message to welcome channel...attempting to send PM")
-        }
-    }
-    await member.send("Welcome to the clan! Reply !ign [Your In Game Name]\n For example `!ign Thugga`");
+    await member.send('', {
+        files: [
+            './assets/chilltopia-banner.png',
+            './assets/rules.png'
+        ]
+    });
+    await member.send(Rules);
 });
 
 client.on('guildMemberRemove', async (member) => {
