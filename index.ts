@@ -89,8 +89,8 @@ client.on('message', async (message) => {
                 if (user) {
                     const guildMember = server.member(user);
                     if (process.env.NOT_IN_CLAN_ROLE_ID && process.env.RANK_ONE_ID &&  process.env.VERIFIED_ROLE_ID) {
-                        guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
-                        guildMember?.roles.add([process.env.RANK_ONE_ID, process.env.VERIFIED_ROLE_ID]);
+                        await guildMember?.roles.add([process.env.RANK_ONE_ID, process.env.VERIFIED_ROLE_ID]);
+                        await guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
                         const ign = guildMember?.nickname;
                         if (ign) {
                             const response = await addMemberToWiseOldMan(ign);

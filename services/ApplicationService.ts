@@ -29,7 +29,7 @@ export const sendQuestions = async (message: Message, server: Guild, approvalCha
         await message.channel.send(`Thank you for filling out the application, our bot will send us your application. Once your application has been reviewed and you will then be requested to meet in-game for a clan invite before your application is accepted. If you don’t work with a mod to get a in-game clan invite within the next 48 hours you will be kicked from the Discord Server and have to re apply again.`)
         if (process.env.NOT_IN_CLAN_ROLE_ID) {
             const guildMember = server.member(message.author);
-            guildMember?.roles.add(process.env.NOT_IN_CLAN_ROLE_ID)
+            await guildMember?.roles.add(process.env.NOT_IN_CLAN_ROLE_ID)
         }
         const collectedArray = collected.array().map(x => x.toString());
         const username = collectedArray[0];
