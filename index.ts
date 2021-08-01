@@ -81,7 +81,7 @@ client.on('message', async (message) => {
         }
     } else {
         // Accept application for user. must be from a mod and in this channel
-        if (message.channel.id === process.env.AWAITING_APPROVAL_CHANNEL_ID && mods.some(x => x.id === message.member?.id)) {
+        if (message.channel.id === process.env.AWAITING_APPROVAL_CHANNEL_ID) {
             const {command, context} = parseServerCommand(message.content);
             if (command === '!confirm' && context) {
                 // this is returned in the format <!@12345>, so we need to get rid of all the special chars
