@@ -42,6 +42,7 @@ const initializeReportMembersEligibleForRankUp = async (client: Client, reportin
             const membersDueForRank = currentMembers.filter(x => x.joinedAt !== null).map((member) => {
                 // hard casting date since its not picking up on the filter
                 const joinedDate = dayjs(member.joinedAt as Date);
+                console.log(joinedDate);
                 const monthsInServer = today.diff(joinedDate, 'month');
                 const memberRoleIds = member.roles.cache.map(role => role.id);
                 const currentRanks = TimeRoles.filter(x => memberRoleIds.includes(x.id));
@@ -99,14 +100,14 @@ const initializeReportMembersNotInClan = async (client: Client, reportingChannel
 
 
 
-export const scheduleReportMembersEligibleForRankUp = (client: Client, reportingChannelId: string, serverId: string) => {
-    schedule('0 21 * * *',  async () => {
-        try {
-            await initializeReportMembersEligibleForRankUp(client, reportingChannelId, serverId)
-        } catch (e) {
-            console.log(e);
-        }
-    });
+export const scheduleReportMembersEligibleForRankUp = async (client: Client, reportingChannelId: string, serverId: string) => {
+    // schedule('0 21 * * *',  async () => {
+    try {
+        await initializeReportMembersEligibleForRankUp(client, reportingChannelId, serverId)
+    } catch (e) {
+        console.log(e);
+    }
+    // });
 }
 
 export const scheduleReportMembersNotInClan = (client: Client, reportingChannelId: string, serverId: string, notInClanId: string) => {
