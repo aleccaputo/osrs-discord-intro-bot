@@ -2,7 +2,8 @@ import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import {
-    scheduleReportMembersEligibleForRankUp, scheduleReportMembersNotInClan
+    scheduleReportMembersEligibleForRankUp,
+    scheduleReportMembersNotInClan
 } from "./services/ReportingService";
 import {Rules} from "./services/constants/rules";
 import {ApplicationQuestions} from "./services/constants/application-questions";
@@ -72,7 +73,7 @@ client.on('message', async (message) => {
     if (message.channel.type === "dm") {
         // they've agreed to the rules, send out the application questions
         const {command} = parseServerCommand(message.content);
-        if (command === '!agree') {
+        if (command === 'agree') {
             await message.channel.send(`Great! I will now send you a series of ${ApplicationQuestions.length} questions. Please respond to each one in a single message. This will be your application.
             The messages will be sent in this DM and you will respond to each one here by sending a message back.`)
             if(process.env.AWAITING_APPROVAL_CHANNEL_ID) {
@@ -83,7 +84,7 @@ client.on('message', async (message) => {
         // Accept application for user. must be from a mod and in this channel
         if (message.channel.id === process.env.AWAITING_APPROVAL_CHANNEL_ID) {
             const {command, context} = parseServerCommand(message.content);
-            if (command === '!confirm' && context) {
+            if (command === 'confirm' && context) {
                 // this is returned in the format <!@12345>, so we need to get rid of all the special chars
                 const user = client.users.cache.get(context.replace(/[^0-9]/g, ''));
                 if (user) {

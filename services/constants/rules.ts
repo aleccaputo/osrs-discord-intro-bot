@@ -15,4 +15,4 @@ export const Rules = 'Hello and welcome to ChillTopia’s Discord!\n' +
     '6. No abusing your Rank Privileges. \n' +
     '7. Help others.\n' +
     '8. If you have a problem with someone or something please do not hesitate to message a Moderator Rank or a Owner/Co-Owner Rank.\n' +
-    '**If you agree to these rules respond `!agree`**';
+    '**If you agree to these rules respond `!chill agree`**';
