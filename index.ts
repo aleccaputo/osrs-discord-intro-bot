@@ -2,6 +2,7 @@ import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import {
+    initializeClanDiscordSync,
     scheduleReportMembersEligibleForRankUp,
     scheduleReportMembersNotInClan
 } from "./services/ReportingService";
@@ -9,54 +10,26 @@ import {Rules} from "./services/constants/rules";
 import {ApplicationQuestions} from "./services/constants/application-questions";
 import {sendQuestions} from "./services/ApplicationService";
 import {parseServerCommand} from "./services/MessageHelpers";
+import {addMemberToGroup} from "./services/WiseOldManService";
 dotenv.config();
 
 const serverId = process.env.SERVER;
 const client = new Discord.Client();
+
 
 client.login(process.env.TOKEN);
 
 client.once('ready', async () => {
     console.log('ready');
     try {
-        scheduleReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
+        initializeClanDiscordSync(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.WISE_OLD_MAN_GROUP_ID ?? '');
+        scheduleReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.WISE_OLD_MAN_GROUP_ID ?? '');
         scheduleReportMembersNotInClan(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.NOT_IN_CLAN_ROLE_ID ?? '')
     } catch (e) {
         console.error(e);
         console.error("failed to initialize reporting tasks");
     }
 });
-
-const addMemberToWiseOldMan = async(inGameName: string): Promise<boolean | null> => {
-    if (!process.env.WISE_OLD_MAN_GROUP_ID || !process.env.WISE_OLD_MAN_VERIFICATION_CODE) {
-        return null;
-    }
-
-    const body = {
-        verificationCode: process.env.WISE_OLD_MAN_VERIFICATION_CODE,
-        members: [
-            {
-                username: inGameName,
-                role: 'member'
-            }
-        ]
-    };
-
-    try {
-        await fetch(`https://api.wiseoldman.net/groups/${parseInt(process.env.WISE_OLD_MAN_GROUP_ID, 10)}/add-members`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body)
-        });
-        return true;
-    } catch (e) {
-        console.error(e);
-        return false;
-    }
-}
-
 
 client.on('message', async (message) => {
     // don't respond to messages from self
@@ -94,7 +67,10 @@ client.on('message', async (message) => {
                         await guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
                         const ign = guildMember?.nickname;
                         if (ign) {
-                            const response = await addMemberToWiseOldMan(ign);
+                            if (!process.env.WISE_OLD_MAN_GROUP_ID || !process.env.WISE_OLD_MAN_VERIFICATION_CODE) {
+                                return;
+                            }
+                            const response = await addMemberToGroup(process.env.WISE_OLD_MAN_GROUP_ID, ign, process.env.WISE_OLD_MAN_VERIFICATION_CODE);
                             if (!response) {
                                 mods.forEach(mod => mod.send(`Unable to add <@${message.author.id}> to wise old man.`));
                             }
