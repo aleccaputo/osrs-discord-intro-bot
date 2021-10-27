@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import {
     scheduleReportMembersEligibleForRankUp,
-    scheduleReportMembersNotInClan
+    scheduleReportMembersNotInClan, scheduleReportNominationResults
 } from "./services/ReportingService";
 import {Rules} from "./services/constants/rules";
 import {ApplicationQuestions} from "./services/constants/application-questions";
@@ -28,6 +28,7 @@ dotenv.config();
             try {
                 scheduleReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
                 scheduleReportMembersNotInClan(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.NOT_IN_CLAN_ROLE_ID ?? '')
+                scheduleReportNominationResults(client, process.env.NOMINATION_RESULTS_CHANNEL_ID ?? '', serverId ?? '');
             } catch (e) {
                 console.error(e);
                 console.error("failed to initialize reporting tasks");
@@ -66,7 +67,6 @@ dotenv.config();
 
 
         client.on('message', async (message) => {
-            reportCurrentVotes()
             // don't respond to messages from self
             if (message.author.id === client.user?.id) {
                 return;
@@ -90,9 +90,7 @@ dotenv.config();
                 }
                 if (command === 'nominate') {
                     await message.channel.send(`Great! I will now send you a series of ${AwardQuestions.length} questions. Please respond to each one with your nominee's OSRS name. For example, if the bot sends you "Best pvmer", you could respond: MrPooter.\n After sending the name, please wait for the next question to be dmed to you.`)
-                    if (process.env.NOMINATION_RESULTS_CHANNEL_ID) {
-                        sendAwardQuestions(message, server, client.channels.cache.get(process.env.NOMINATION_RESULTS_CHANNEL_ID));
-                    }
+                    sendAwardQuestions(message, server);
                 }
             } else {
                 // Accept application for user. must be from a mod and in this channel

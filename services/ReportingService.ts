@@ -3,6 +3,7 @@ import type {Client} from "discord.js";
 import dayjs from "dayjs";
 import {TimeRole, TimeRoles} from "./constants/roles";
 import {GuildMember} from "discord.js";
+import {reportCurrentVotes} from "./CommunityAwardService";
 
 interface IMemberDueForRank {
     userId: string;
@@ -97,12 +98,38 @@ const initializeReportMembersNotInClan = async (client: Client, reportingChannel
     }
 }
 
+const initializeNominationReport = async (client: Client, reportingChannelId: string, serverId: string) => {
+    console.log('Kicking off award nomination report...');
+    const server = client.guilds.cache.find(guild => guild.id === serverId);
+    if (server) {
+        const reportingChannel = client.channels.cache.get(reportingChannelId);
+        if (reportingChannel && reportingChannel.isText()) {
+            try {
+                const report = await reportCurrentVotes();
+                await reportingChannel.send(report);
+            } catch (e) {
+                console.log(e);
+            }
+        }
+    }
+}
+
 
 
 export const scheduleReportMembersEligibleForRankUp = (client: Client, reportingChannelId: string, serverId: string) => {
     schedule('0 21 * * *',  async () => {
         try {
             await initializeReportMembersEligibleForRankUp(client, reportingChannelId, serverId)
+        } catch (e) {
+            console.log(e);
+        }
+    });
+}
+
+export const scheduleReportNominationResults = (client: Client, reportingChannelId: string, serverId: string) => {
+    schedule('0 22 * * *',  async () => {
+        try {
+            await initializeNominationReport(client, reportingChannelId, serverId);
         } catch (e) {
             console.log(e);
         }
