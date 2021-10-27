@@ -32,6 +32,10 @@ export const ApplicationQuestions: Array<IApplicationQuestion> = [
         question: 'What are you looking for in a clan?',
         order: 7
     },
+    {
+        question: 'How old are you?',
+        order: 8
+    }
 ]
 
 export interface IApplicationQuestionAnswer extends IApplicationQuestion {
