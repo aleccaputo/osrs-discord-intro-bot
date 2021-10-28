@@ -98,7 +98,7 @@ const initializeReportMembersNotInClan = async (client: Client, reportingChannel
     }
 }
 
-const initializeNominationReport = async (client: Client, reportingChannelId: string, serverId: string) => {
+export const initializeNominationReport = async (client: Client, reportingChannelId: string, serverId: string) => {
     console.log('Kicking off award nomination report...');
     const server = client.guilds.cache.find(guild => guild.id === serverId);
     if (server) {

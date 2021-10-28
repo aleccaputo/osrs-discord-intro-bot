@@ -2,6 +2,7 @@ import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import {
+    initializeNominationReport,
     scheduleReportMembersEligibleForRankUp,
     scheduleReportMembersNotInClan, scheduleReportNominationResults
 } from "./services/ReportingService";
@@ -113,6 +114,11 @@ dotenv.config();
                                 }
                             }
                         }
+                    }
+                } else if (message.channel.id === process.env.NOMINATION_RESULTS_CHANNEL_ID) {
+                    const {command} = parseServerCommand(message.content);
+                    if (command === 'nomination-report') {
+                        await initializeNominationReport(client, process.env.NOMINATION_RESULTS_CHANNEL_ID ?? '', serverId ?? '');
                     }
                 }
             }

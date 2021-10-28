@@ -8,23 +8,33 @@ export const sendAwardQuestions = async (message: Message, server: Guild) => {
     // assert the person sending the response is the same we sent the application to.
     const questionFilter = (m: Message) => m.author.id === message.author.id;
     const collector = new MessageCollector(message.channel as TextChannel, questionFilter, {
-        max: AwardQuestions.length - 20
+        max: AwardQuestions.length,
+        idle: 60000
     });
     message.channel.send(AwardQuestions[questionCounter++].question);
     collector.on('collect', m => {
-        if (questionCounter < AwardQuestions.length - 20) {
+        if (questionCounter < AwardQuestions.length) {
             message.channel.send(AwardQuestions[questionCounter++].question)
         }
     });
-    collector.on('end', async collected => {
+    collector.on('end', async (collected, reason) => {
+        if (reason === 'idle') {
+            await message.channel.send('You took too long to respond. Send the command again to restart!');
+            return;
+        }
         const collectedArray = collected.array().map(x => x.toString());
 
         const authorId = message.author.id;
 
         if (authorId) {
-            if (validateAnswers(collectedArray)) {
+            const errors = validateAnswers(collectedArray);
+            if (errors.length) {
                 console.log('error')
-                await message.channel.send('Seems like one of your answers was invalid, please try again!')
+                let errorString = 'Please try again, the following are invalid: ';
+                errors.forEach(error => {
+                    errorString += `${error} is invalid`
+                })
+                await message.channel.send(errorString)
                 return;
             }
             try {
@@ -61,15 +71,15 @@ const ensureUnique = async (authorId: string) => {
     return CommunityAwards.exists({discordId: authorId})
 }
 
-const validateAnswers = (answers: Array<string>) => Boolean(answers.filter(answer => !answer.length || answer.length > 13).length);
+const validateAnswers = (answers: Array<string>) => answers.filter(answer => !answer.length || answer.length > 13);
 
-export const reportCurrentVotes = async (nominationChannel?: Channel) => {
+export const reportCurrentVotes = async () => {
     const allNominations: Array<ICommunityAward> = await CommunityAwards.find({});
-    const foo = allNominations.map(x => x.answers.map(y => ({...y, discordId: x.discordId}))).flat().map(y => _omit(y, 'question'));
+    const foo = allNominations.map(x => x.answers).flat().map(y => _omit(y, 'question'));
 
     // https://stackoverflow.com/questions/45258566/javascript-counting-duplicates-in-object-array-and-storing-the-count-as-a-new
     const countedNominations = [...foo.reduce( (mp, o) => {
-        const key = JSON.stringify([o.questionId, o.answer, o.discordId]);
+        const key = JSON.stringify([o.questionId, o.answer.toLocaleLowerCase()]);
         if (!mp.has(key)) {
             mp.set(key, { ...o, count: 0 });
         }
@@ -78,7 +88,7 @@ export const reportCurrentVotes = async (nominationChannel?: Channel) => {
             val.count++;
         }
         return mp;
-    }, new Map<string, { questionId: number, answer: string, count: number, discordId: string}>()).values()];
+    }, new Map<string, { questionId: number, answer: string, count: number}>()).values()];
 
     let formattedString = '';
 
@@ -86,7 +96,7 @@ export const reportCurrentVotes = async (nominationChannel?: Channel) => {
         const nominations = countedNominations.filter(nom => nom.questionId === x.order);
         const winner = nominations?.reduce((prev, current) => (prev.count > current.count) ? prev : current, nominations[0]);
         if (winner) {
-            formattedString += `\n${x.question}?\n<@${winner.discordId}>: ${winner.count} votes!`;
+            formattedString += `\n**${x.question}?**\n${winner.answer}: ${winner.count} votes!\n`;
         }
     });
     return formattedString;

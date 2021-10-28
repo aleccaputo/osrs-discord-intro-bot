@@ -80,10 +80,10 @@ export const AwardQuestions: Array<IAwardQuestion> = [
         question: 'Best Pker',
         order: 20
     },
-    {
+/*    {
         question: 'Best Bromance',
         order: 21
-    },
+    },*/
     {
         question: 'Biggest Weeb',
         order: 22
