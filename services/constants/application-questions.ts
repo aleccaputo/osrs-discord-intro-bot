@@ -33,7 +33,7 @@ export const ApplicationQuestions: Array<IApplicationQuestion> = [
         order: 7
     },
     {
-        question: 'How old are you?',
+        question: 'Are you 18 or older?',
         order: 8
     }
 ]
