@@ -11,8 +11,9 @@ import {ApplicationQuestions} from "./services/constants/application-questions";
 import {AwardQuestions} from "./services/constants/award-questions";
 import {sendQuestions} from "./services/ApplicationService";
 import {parseServerCommand} from "./services/MessageHelpers";
-import {reportCurrentVotes, sendAwardQuestions} from "./services/CommunityAwardService";
+import {ensureUniqueAnswers, sendAwardQuestions} from "./services/CommunityAwardService";
 import {connect} from "./services/DataService";
+import {addMemberToWiseOldMan} from "./services/WiseOldManService";
 
 dotenv.config();
 
@@ -35,37 +36,6 @@ dotenv.config();
                 console.error("failed to initialize reporting tasks");
             }
         });
-
-        const addMemberToWiseOldMan = async (inGameName: string): Promise<boolean | null> => {
-            if (!process.env.WISE_OLD_MAN_GROUP_ID || !process.env.WISE_OLD_MAN_VERIFICATION_CODE) {
-                return null;
-            }
-
-            const body = {
-                verificationCode: process.env.WISE_OLD_MAN_VERIFICATION_CODE,
-                members: [
-                    {
-                        username: inGameName,
-                        role: 'member'
-                    }
-                ]
-            };
-
-            try {
-                await fetch(`https://api.wiseoldman.net/groups/${parseInt(process.env.WISE_OLD_MAN_GROUP_ID, 10)}/add-members`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(body)
-                });
-                return true;
-            } catch (e) {
-                console.error(e);
-                return false;
-            }
-        }
-
 
         client.on('message', async (message) => {
             // don't respond to messages from self
@@ -90,7 +60,12 @@ dotenv.config();
                     }
                 }
                 if (command === 'nominate') {
-                    await message.channel.send(`Great! I will now send you a series of ${AwardQuestions.length} questions. Please respond to each one with your nominee's OSRS name. For example, if the bot sends you "Best pvmer", you could respond: MrPooter.\n After sending the name, please wait for the next question to be dmed to you.`)
+                    const existingEntry = await ensureUniqueAnswers(message.author.id);
+                    if (existingEntry) {
+                        await message.channel.send(`You have already voted this year, thank you!`);
+                        return;
+                    }
+                    await message.channel.send(`Great! I will now send you a series of ${AwardQuestions.length} questions. Please respond to each one with your nominee's OSRS name **EXACTLY AS IT APPEARS IN DISCORD**.\nFor example, if the bot sends you "Best pvmer", you could respond: MrPooter.\n After sending the name, please wait for the next question to be dmed to you.`)
                     sendAwardQuestions(message, server);
                 }
             } else {
@@ -119,6 +94,12 @@ dotenv.config();
                     const {command} = parseServerCommand(message.content);
                     if (command === 'nomination-report') {
                         await initializeNominationReport(client, process.env.NOMINATION_RESULTS_CHANNEL_ID ?? '', serverId ?? '');
+                    }
+                    if (command === 'send-questions-to-all') {
+                        const members = await server.members.fetch();
+                        members.forEach(member => {
+                            member.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
+                        });
                     }
                 }
             }
@@ -155,5 +136,5 @@ dotenv.config();
         console.log(e);
         console.log('error on startup!')
     }
-})()
+})();
 

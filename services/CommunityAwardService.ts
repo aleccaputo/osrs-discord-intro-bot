@@ -1,5 +1,5 @@
 import CommunityAwards, {ICommunityAward} from '../models/CommunityAwards';
-import {Channel, Guild, GuildMember, Message, MessageCollector, TextChannel} from "discord.js";
+import {Guild, Message, MessageCollector, TextChannel} from "discord.js";
 import {AwardQuestions} from "./constants/award-questions";
 import _omit from 'lodash.omit';
 
@@ -9,7 +9,7 @@ export const sendAwardQuestions = async (message: Message, server: Guild) => {
     const questionFilter = (m: Message) => m.author.id === message.author.id;
     const collector = new MessageCollector(message.channel as TextChannel, questionFilter, {
         max: AwardQuestions.length,
-        idle: 60000
+        idle: 300000
     });
     message.channel.send(AwardQuestions[questionCounter++].question);
     collector.on('collect', m => {
@@ -19,7 +19,7 @@ export const sendAwardQuestions = async (message: Message, server: Guild) => {
     });
     collector.on('end', async (collected, reason) => {
         if (reason === 'idle') {
-            await message.channel.send('You took too long to respond. Send the command again to restart!');
+            await message.channel.send('You took too long to respond. To restart your application, use the command `!chill nominate` to start again.');
             return;
         }
         const collectedArray = collected.array().map(x => x.toString());
@@ -52,7 +52,7 @@ export const sendAwardQuestions = async (message: Message, server: Guild) => {
 }
 
 const saveAnswers = async (authorId: string, answers: Array<string>) => {
-    const existingEntry = await ensureUnique(authorId);
+    const existingEntry = await ensureUniqueAnswers(authorId);
     if (existingEntry) {
         return null;
     }
@@ -67,7 +67,7 @@ const saveAnswers = async (authorId: string, answers: Array<string>) => {
     }).save();
 }
 
-const ensureUnique = async (authorId: string) => {
+export const ensureUniqueAnswers = async (authorId: string) => {
     return CommunityAwards.exists({discordId: authorId})
 }
 
