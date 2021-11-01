@@ -99,7 +99,7 @@ export const reportCurrentVotes = async () => {
             formattedString += `\n**${x.question}?**\n${winner.answer}: ${winner.count} votes!\n`;
         }*/
         formattedString += `\n**${x.question}?**\n`;
-        nominations.sort((a, b) => a.count - b.count).forEach(nomination => {
+        nominations.sort((a, b) => b.count - a.count).forEach(nomination => {
             formattedString += `${nomination.answer}: ${nomination.count}\n`;
         });
     });

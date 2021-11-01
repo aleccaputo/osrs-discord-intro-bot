@@ -114,8 +114,6 @@ export const initializeNominationReport = async (client: Client, reportingChanne
     }
 }
 
-
-
 export const scheduleReportMembersEligibleForRankUp = (client: Client, reportingChannelId: string, serverId: string) => {
     schedule('0 21 * * *',  async () => {
         try {
