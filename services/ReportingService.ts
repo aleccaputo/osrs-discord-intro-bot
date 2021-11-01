@@ -106,7 +106,7 @@ export const initializeNominationReport = async (client: Client, reportingChanne
         if (reportingChannel && reportingChannel.isText()) {
             try {
                 const report = await reportCurrentVotes();
-                await reportingChannel.send(report);
+                await reportingChannel.send(report, {split: true});
             } catch (e) {
                 console.log(e);
             }
