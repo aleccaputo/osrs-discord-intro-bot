@@ -1,6 +1,5 @@
 import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
-import fetch from 'node-fetch';
 import {
     initializeNominationReport,
     scheduleReportMembersEligibleForRankUp,
@@ -90,6 +89,7 @@ dotenv.config();
                             }
                         }
                     }
+                // handle nomination event
                 } else if (message.channel.id === process.env.NOMINATION_RESULTS_CHANNEL_ID) {
                     const {command} = parseServerCommand(message.content);
                     if (command === 'nomination-report') {
@@ -101,7 +101,20 @@ dotenv.config();
                             member.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
                         });
                     }
+                // handle forwarding drop submissions to private channel
+                } else if (message.channel.id === process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID && process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
+                    const privateSubmissionsChannel = client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID);
+                    const messageAttachments = message.attachments.size > 0 ? message.attachments.array() : null;
+                    if (privateSubmissionsChannel && messageAttachments && privateSubmissionsChannel.isText()) {
+                        privateSubmissionsChannel.send(messageAttachments);
+                    }
                 }
+            }
+        });
+
+        client.on('messageReactionAdd', async (reaction, user) => {
+            if (reaction.message.channel.id === process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
+                // todo, need an allowed list of reactions for points
             }
         });
 
