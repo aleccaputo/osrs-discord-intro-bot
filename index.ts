@@ -13,13 +13,15 @@ import {parseServerCommand} from "./services/MessageHelpers";
 import {ensureUniqueAnswers, sendAwardQuestions} from "./services/CommunityAwardService";
 import {connect} from "./services/DataService";
 import {addMemberToWiseOldMan} from "./services/WiseOldManService";
+import {processPoints} from "./services/DropSubmissionService";
 
 dotenv.config();
 
 ;(async () => {
     try {
         const serverId = process.env.SERVER;
-        const client = new Discord.Client();
+        // https://github.com/discordjs/discord.js/issues/4980#issuecomment-723519865
+        const client = new Discord.Client({partials: ['USER', 'REACTION', 'MESSAGE']});
 
         await client.login(process.env.TOKEN);
         await connect();
@@ -106,7 +108,7 @@ dotenv.config();
                     const privateSubmissionsChannel = client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID);
                     const messageAttachments = message.attachments.size > 0 ? message.attachments.array() : null;
                     if (privateSubmissionsChannel && messageAttachments && privateSubmissionsChannel.isText()) {
-                        privateSubmissionsChannel.send(messageAttachments);
+                        privateSubmissionsChannel.send(`<@${message.author.id}>`, messageAttachments);
                     }
                 }
             }
@@ -114,7 +116,15 @@ dotenv.config();
 
         client.on('messageReactionAdd', async (reaction, user) => {
             if (reaction.message.channel.id === process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
-                // todo, need an allowed list of reactions for points
+                const message = await reaction.message.fetch();
+                const userId = message.content.replace('<@', '').slice(0, -1);
+                const points = await processPoints(reaction.emoji, userId);
+                if (points) {
+                    const privateSubmissionsChannel = client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID);
+                    if (privateSubmissionsChannel && privateSubmissionsChannel.isText()) {
+                        privateSubmissionsChannel.send(`<@${userId}> now has ${points} points`);
+                    }
+                }
             }
         });
 
