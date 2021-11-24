@@ -75,10 +75,10 @@ const validateAnswers = (answers: Array<string>) => answers.filter(answer => !an
 
 export const reportCurrentVotes = async () => {
     const allNominations: Array<ICommunityAward> = await CommunityAwards.find({});
-    const foo = allNominations.map(x => x.answers).flat().map(y => _omit(y, 'question'));
+    const flattenedNominations = allNominations.map(x => x.answers).flat().map(y => _omit(y, 'question'));
 
     // https://stackoverflow.com/questions/45258566/javascript-counting-duplicates-in-object-array-and-storing-the-count-as-a-new
-    const countedNominations = [...foo.reduce( (mp, o) => {
+    const countedNominations = [...flattenedNominations.reduce( (mp, o) => {
         const key = JSON.stringify([o.questionId, o.answer.toLocaleLowerCase()]);
         if (!mp.has(key)) {
             mp.set(key, { ...o, count: 0 });

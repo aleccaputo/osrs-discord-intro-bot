@@ -1,40 +1,69 @@
-import {Emoji} from "discord.js";
+import {Channel, Emoji, Message, MessageReaction, TextChannel} from "discord.js";
 import User from "../models/User";
 
+const NumberEmojis = {
+    ONE: '1️⃣',
+    TWO: '2️⃣',
+    THREE: '3️⃣',
+    FOUR: '4️⃣',
+    FIVE: '5️⃣',
+    SIX: '6️⃣',
+    SEVEN: '7️⃣',
+    EIGHT: '8️⃣',
+    NINE: '9️⃣',
+    TEN: '🔟'
+}
 // wonder if the intl lib has something for this
 const convertEmojiToNumber = (emoji: Emoji) => {
     switch (emoji.name) {
-        case '1️⃣':
+        case NumberEmojis.ONE:
             return 1;
-        case '2️⃣':
+        case NumberEmojis.TWO:
             return 2;
-        case '3️⃣':
+        case NumberEmojis.THREE:
             return 3;
-        case '4️⃣':
+        case NumberEmojis.FOUR:
             return 4;
-        case '5️⃣':
+        case NumberEmojis.FIVE:
             return 5;
-        case '6️⃣':
+        case NumberEmojis.SIX:
             return 6;
-        case '7️⃣':
+        case NumberEmojis.SEVEN:
             return 7;
-        case '8️⃣':
+        case NumberEmojis.EIGHT:
             return 8;
-        case '9️⃣':
+        case NumberEmojis.NINE:
             return 9;
-        case '🔟':
+        case NumberEmojis.TEN:
             return 10;
         default:
             return null;
     }
 }
-export const processPoints = async (emoji: Emoji, userDiscordId: string) => {
+
+export enum PointsAction {
+    ADD = 'add',
+    SUBTRACT = 'subtract'
+}
+
+export const extractMessageInformationAndProcessPoints = async (reaction: MessageReaction, privateSubmissionsChannel?: Channel, pointsAction: PointsAction = PointsAction.ADD) => {
+    const message = await reaction.message.fetch();
+    const userId = message.content.replace('<@', '').slice(0, -1);
+    const points = await processPoints(reaction.emoji, userId, pointsAction);
+    if (points) {
+        if (privateSubmissionsChannel && privateSubmissionsChannel.isText()) {
+            await privateSubmissionsChannel.send(`<@${userId}> now has ${points} points`);
+        }
+    }
+}
+
+const processPoints = async (emoji: Emoji, userDiscordId: string, action: PointsAction = PointsAction.ADD) => {
     const pointValue = convertEmojiToNumber(emoji);
     if (pointValue) {
         try {
             const user = await User.findOne({discordId: userDiscordId});
             if (user) {
-                const newPoints = user.points + pointValue;
+                const newPoints = action === PointsAction.ADD ? user.points + pointValue : Math.max(0, user.points - pointValue);
                 user.points = newPoints;
                 user.save();
                 return user.points;
@@ -44,4 +73,18 @@ export const processPoints = async (emoji: Emoji, userDiscordId: string) => {
         }
     }
     return null;
+}
+
+export const reactWithBasePoints = async (message: Message) => {
+    // stupid that i can't pass an array.
+    await message.react(NumberEmojis.ONE);
+    await message.react(NumberEmojis.TWO);
+    await message.react(NumberEmojis.THREE);
+    await message.react(NumberEmojis.FOUR);
+    await message.react(NumberEmojis.FIVE);
+    await message.react(NumberEmojis.SIX);
+    await message.react(NumberEmojis.SEVEN);
+    await message.react(NumberEmojis.EIGHT);
+    await message.react(NumberEmojis.NINE);
+    await message.react(NumberEmojis.TEN);
 }
