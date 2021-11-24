@@ -1,10 +1,10 @@
 import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
-import fetch from 'node-fetch';
 import {
     initializeNominationReport,
     scheduleReportMembersEligibleForRankUp,
-    scheduleReportMembersNotInClan, scheduleReportNominationResults
+    scheduleReportMembersNotInClan,
+    scheduleReportNominationResults
 } from "./services/ReportingService";
 import {Rules} from "./services/constants/rules";
 import {ApplicationQuestions} from "./services/constants/application-questions";
@@ -14,13 +14,20 @@ import {parseServerCommand} from "./services/MessageHelpers";
 import {ensureUniqueAnswers, sendAwardQuestions} from "./services/CommunityAwardService";
 import {connect} from "./services/DataService";
 import {addMemberToWiseOldMan} from "./services/WiseOldManService";
+import {
+    extractMessageInformationAndProcessPoints,
+    PointsAction,
+    reactWithBasePoints
+} from "./services/DropSubmissionService";
+import {createUser} from "./services/UserService";
 
 dotenv.config();
 
 ;(async () => {
     try {
         const serverId = process.env.SERVER;
-        const client = new Discord.Client();
+        // https://github.com/discordjs/discord.js/issues/4980#issuecomment-723519865
+        const client = new Discord.Client({partials: ['USER', 'REACTION', 'MESSAGE']});
 
         await client.login(process.env.TOKEN);
         await connect();
@@ -81,6 +88,16 @@ dotenv.config();
                                 await guildMember?.roles.add([process.env.RANK_ONE_ID, process.env.VERIFIED_ROLE_ID]);
                                 await guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
                                 const ign = guildMember?.nickname;
+                                try {
+                                    await createUser(guildMember);
+                                } catch (e) {
+                                    if (process.env.REPORTING_CHANNEL_ID) {
+                                        const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
+                                        if (reportingChannel && reportingChannel.isText()) {
+                                            await reportingChannel.send(`Unable to add <@${message.author.id}> as a user. Please contact a developer`)
+                                        }
+                                    }
+                                }
                                 if (ign) {
                                     const response = await addMemberToWiseOldMan(ign);
                                     if (!response) {
@@ -90,6 +107,7 @@ dotenv.config();
                             }
                         }
                     }
+                // handle nomination event
                 } else if (message.channel.id === process.env.NOMINATION_RESULTS_CHANNEL_ID) {
                     const {command} = parseServerCommand(message.content);
                     if (command === 'nomination-report') {
@@ -101,7 +119,35 @@ dotenv.config();
                             member.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
                         });
                     }
+                // handle forwarding drop submissions to private channel
+                } else if (message.channel.id === process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID && process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
+                    const privateSubmissionsChannel = client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID);
+                    const messageAttachments = message.attachments.size > 0 ? message.attachments.array() : null;
+                    if (privateSubmissionsChannel && messageAttachments && privateSubmissionsChannel.isText()) {
+                        const privateMessage = await privateSubmissionsChannel.send(`<@${message.author.id}>`, messageAttachments);
+                        await reactWithBasePoints(privateMessage);
+                    }
                 }
+            }
+        });
+
+        client.on('messageReactionAdd', async (reaction, user) => {
+            // don't respond to messages from self (the bot)
+            if (user.id === client.user?.id) {
+                return;
+            }
+            if (reaction.message.channel.id === process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
+                await extractMessageInformationAndProcessPoints(reaction, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID))
+            }
+        });
+
+        client.on('messageReactionRemove', async (reaction, user) => {
+            // don't respond to messages from self (the bot)
+            if (user.id === client.user?.id) {
+                return;
+            }
+            if (reaction.message.channel.id === process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
+                await extractMessageInformationAndProcessPoints(reaction, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID), PointsAction.SUBTRACT)
             }
         });
 
