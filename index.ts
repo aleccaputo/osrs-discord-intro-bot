@@ -152,7 +152,7 @@ const rateLimitSeconds = 2;
                             if (user) {
                                 const newPoints = await modifyPoints(user, pointNumber, operator === '+' ? PointsAction.ADD : PointsAction.SUBTRACT);
                                 if (newPoints) {
-                                    await adminChannel.send(`${formatDiscordUserTag(message.author.id)} now has ${newPoints} points`);
+                                    await adminChannel.send(`${formatDiscordUserTag(userId)} now has ${newPoints} points`);
                                 }
                             }
                         }
