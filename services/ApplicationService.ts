@@ -52,43 +52,47 @@ export const createApplicationChannel = async (server: Guild, applicant:  User |
     const channelName = `application-${applicant.username}`
     const channel = await server.channels.create(channelName, {
         type: 'text',
-        topic: 'application',
-        permissionOverwrites: [
-            {
-                id: process.env.MOD_ROLE_ID ?? '',
-                type: 'role',
-                allow: Permissions.DEFAULT
-            },
-            {
-                id: process.env.ADMIN_ROLE_ID ?? '',
-                type: 'role',
-                allow: Permissions.DEFAULT
-            },
-            {
-                id: process.env.OWNER_ROLE_ID ?? '',
-                type: 'role',
-                allow: Permissions.DEFAULT
-            },
-            {
-                id: process.env.CO_OWNER_ROLE_ID ?? '',
-                type: 'role',
-                allow: Permissions.DEFAULT
-            },
-            {
-                id: applicant.id,
-                type: 'member',
-                allow: ['READ_MESSAGE_HISTORY', 'SEND_MESSAGES', 'VIEW_CHANNEL']
-            },
-            {
-                id: botId ?? '',
-                type: 'member',
-                allow: Permissions.DEFAULT
-            },
-            {
-                id: server.id,
-                deny: ['VIEW_CHANNEL']
-            }
-        ]
+        topic: 'application'
     });
+    if (process.env.APPLICATIONS_CHANNEL_CATEGORY_ID) {
+        await channel.setParent(process.env.APPLICATIONS_CHANNEL_CATEGORY_ID);
+    }
+    // need to set parent before permissions
+    await channel.overwritePermissions([
+        {
+            id: process.env.MOD_ROLE_ID ?? '',
+            type: 'role',
+            allow: Permissions.DEFAULT
+        },
+        {
+            id: process.env.ADMIN_ROLE_ID ?? '',
+            type: 'role',
+            allow: Permissions.DEFAULT
+        },
+        {
+            id: process.env.OWNER_ROLE_ID ?? '',
+            type: 'role',
+            allow: Permissions.DEFAULT
+        },
+        {
+            id: process.env.CO_OWNER_ROLE_ID ?? '',
+            type: 'role',
+            allow: Permissions.DEFAULT
+        },
+        {
+            id: applicant.id,
+            type: 'member',
+            allow: ['READ_MESSAGE_HISTORY', 'SEND_MESSAGES', 'VIEW_CHANNEL']
+        },
+        {
+            id: botId ?? '',
+            type: 'member',
+            allow: Permissions.DEFAULT
+        },
+        {
+            id: server.id,
+            deny: ['VIEW_CHANNEL']
+        }
+    ]);
     await channel.send(`Welcome <@${applicant.id}>! To start your application type !chill apply`);
 }
