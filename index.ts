@@ -10,7 +10,7 @@ import {Rules} from "./services/constants/rules";
 import {ApplicationQuestions} from "./services/constants/application-questions";
 import {AwardQuestions} from "./services/constants/award-questions";
 import {createApplicationChannel, sendQuestions} from "./services/ApplicationService";
-import {parseServerCommand} from "./services/MessageHelpers";
+import {formatDiscordUserTag, parseServerCommand, stripDiscordCharactersFromId} from "./services/MessageHelpers";
 import {ensureUniqueAnswers, sendAwardQuestions} from "./services/CommunityAwardService";
 import {connect} from "./services/DataService";
 import {addMemberToWiseOldMan} from "./services/WiseOldManService";
@@ -19,10 +19,12 @@ import {
     PointsAction,
     reactWithBasePoints
 } from "./services/DropSubmissionService";
-import {createUser} from "./services/UserService";
+import {createUser, getUser, modifyPoints} from "./services/UserService";
 import {User} from "discord.js";
 
 dotenv.config();
+let lastRequestForPointsTime: number | null = null;
+const rateLimitSeconds = 2;
 
 ;(async () => {
     try {
@@ -127,7 +129,36 @@ dotenv.config();
                         const privateMessage = await privateSubmissionsChannel.send(`<@${message.author.id}>`, messageAttachments);
                         await reactWithBasePoints(privateMessage);
                     }
-                } else {
+                } else if (message.channel.id === process.env.ADMIN_CHANNEL_ID) {
+                    const adminChannel = client.channels.cache.get(process.env.ADMIN_CHANNEL_ID);
+                    const {command, context, context2} = parseServerCommand(message.content);
+                    // format: !serverCommand modifyPoints @username +/-points
+                    if (command === 'modifypoints') {
+                        // rate limit any requests that are checking non-discord apis (ie internal storage)
+                        if (lastRequestForPointsTime && message.createdTimestamp - (rateLimitSeconds * 1000) < lastRequestForPointsTime) {
+                            return;
+                        }
+                        lastRequestForPointsTime = message.createdTimestamp;
+                        // do we have a value?
+                        if (context2 && adminChannel && adminChannel.isText()) {
+                            const operator = context2.charAt(0);
+                            const userId = stripDiscordCharactersFromId(context ?? '');
+                            const pointNumber = parseInt(context2.substring(1), 10);
+                            if (operator !== '+' && operator !== '-' || !userId) {
+                                await adminChannel.send('Invalid command. Please user the form `!relax modifyPoints @discordNickname +10` or to subtract `-10`');
+                                return;
+                            }
+                            const user = await getUser(userId);
+                            if (user) {
+                                const newPoints = await modifyPoints(user, pointNumber, operator === '+' ? PointsAction.ADD : PointsAction.SUBTRACT);
+                                if (newPoints) {
+                                    await adminChannel.send(`${formatDiscordUserTag(message.author.id)} now has ${newPoints} points`);
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
                     if (message.channel.topic === 'application') {
                         const usernameForChannel = message.channel.name.split('-')[1];
                         if (usernameForChannel.toLocaleLowerCase() !== message.author.username.toLocaleLowerCase()) {
