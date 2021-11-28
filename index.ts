@@ -75,12 +75,18 @@ dotenv.config();
                     const {command, context} = parseServerCommand(message.content);
                     if (command === 'confirm' && context) {
                         // this is returned in the format <!@12345>, so we need to get rid of all the special chars
-                        const user = client.users.cache.get(context.replace(/[^0-9]/g, ''));
+                        const userId = (context.replace(/[^0-9]/g, ''));
+                        const user = client.users.cache.get(userId);
                         if (user) {
                             const guildMember = server.member(user);
                             if (process.env.NOT_IN_CLAN_ROLE_ID && process.env.RANK_ONE_ID && process.env.VERIFIED_ROLE_ID) {
                                 await guildMember?.roles.add([process.env.RANK_ONE_ID, process.env.VERIFIED_ROLE_ID]);
                                 await guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
+                                // delete the application channel
+                                const applicationChannel = server.channels.cache.find(x => x.name === `application-${user.username}`);
+                                if (applicationChannel) {
+                                    await applicationChannel.delete()
+                                }
                                 const ign = guildMember?.nickname;
                                 try {
                                     await createUser(guildMember);
@@ -88,7 +94,7 @@ dotenv.config();
                                     if (process.env.REPORTING_CHANNEL_ID) {
                                         const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
                                         if (reportingChannel && reportingChannel.isText()) {
-                                            await reportingChannel.send(`Unable to add <@${message.author.id}> as a user. Please contact a developer`)
+                                            await reportingChannel.send(`Unable to add <@${userId}> as a user. Please contact a developer`)
                                         }
                                     }
                                 }
@@ -177,16 +183,6 @@ dotenv.config();
                 await extractMessageInformationAndProcessPoints(reaction, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID), PointsAction.SUBTRACT)
             }
         });
-
-/*        client.on('guildMemberAdd', async (member) => {
-            await member.send('', {
-                files: [
-                    './assets/chilltopia-banner.png',
-                    './assets/rules.png'
-                ]
-            });
-            await member.send(Rules);
-        });*/
 
         client.on('guildMemberRemove', async (member) => {
             if (process.env.REPORTING_CHANNEL_ID) {
