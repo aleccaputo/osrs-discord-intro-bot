@@ -151,7 +151,7 @@ const rateLimitSeconds = 2;
                             const user = await getUser(userId);
                             if (user) {
                                 const newPoints = await modifyPoints(user, pointNumber, operator === '+' ? PointsAction.ADD : PointsAction.SUBTRACT);
-                                if (newPoints) {
+                                if (newPoints !== null) {
                                     await adminChannel.send(`${formatDiscordUserTag(userId)} now has ${newPoints} points`);
                                 }
                             }
