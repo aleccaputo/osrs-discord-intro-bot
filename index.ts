@@ -193,7 +193,6 @@ const rateLimitSeconds = 2;
                             const fetchedMember = await guildMember.fetch();
                             // cant create an application channel if you already have a role
                             if (fetchedMember?.roles.cache.array().filter(x => x.name !== '@everyone').length) {
-                                console.log(fetchedMember?.roles.cache.array());
                                 await reaction.users.remove(user as User);
                                 return;
                             }
