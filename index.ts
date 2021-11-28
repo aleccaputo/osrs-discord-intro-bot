@@ -9,7 +9,7 @@ import {
 import {Rules} from "./services/constants/rules";
 import {ApplicationQuestions} from "./services/constants/application-questions";
 import {AwardQuestions} from "./services/constants/award-questions";
-import {sendQuestions} from "./services/ApplicationService";
+import {createApplicationChannel, sendQuestions} from "./services/ApplicationService";
 import {parseServerCommand} from "./services/MessageHelpers";
 import {ensureUniqueAnswers, sendAwardQuestions} from "./services/CommunityAwardService";
 import {connect} from "./services/DataService";
@@ -20,6 +20,7 @@ import {
     reactWithBasePoints
 } from "./services/DropSubmissionService";
 import {createUser} from "./services/UserService";
+import {User} from "discord.js";
 
 dotenv.config();
 
@@ -59,13 +60,6 @@ dotenv.config();
             if (message.channel.type === "dm") {
                 // they've agreed to the rules, send out the application questions
                 const {command} = parseServerCommand(message.content);
-                if (command === 'agree') {
-                    await message.channel.send(`Great! I will now send you a series of ${ApplicationQuestions.length} questions. Please respond to each one in a single message. This will be your application.
-                The messages will be sent in this DM and you will respond to each one here by sending a message back.`)
-                    if (process.env.AWAITING_APPROVAL_CHANNEL_ID) {
-                        sendQuestions(message, server, client.channels.cache.get(process.env.AWAITING_APPROVAL_CHANNEL_ID));
-                    }
-                }
                 if (command === 'nominate') {
                     const existingEntry = await ensureUniqueAnswers(message.author.id);
                     if (existingEntry) {
@@ -127,6 +121,19 @@ dotenv.config();
                         const privateMessage = await privateSubmissionsChannel.send(`<@${message.author.id}>`, messageAttachments);
                         await reactWithBasePoints(privateMessage);
                     }
+                } else {
+                    if (message.channel.topic === 'application') {
+                        const usernameForChannel = message.channel.name.split('-')[1];
+                        if (usernameForChannel.toLocaleLowerCase() !== message.author.username.toLocaleLowerCase()) {
+                            return;
+                        }
+                        const {command} = parseServerCommand(message.content);
+                        if (command === 'apply') {
+                            await message.channel.send(`Great! I will now send you a series of ${ApplicationQuestions.length} questions. Please respond to each one in a single message. This will be your application. The messages will be sent in this channel and you will respond to each one here by sending a message back.`)
+                            if (process.env.AWAITING_APPROVAL_CHANNEL_ID) {
+                                await sendQuestions(message, server, client.channels.cache.get(process.env.AWAITING_APPROVAL_CHANNEL_ID));
+                            }                        }
+                    }
                 }
             }
         });
@@ -138,6 +145,26 @@ dotenv.config();
             }
             if (reaction.message.channel.id === process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
                 await extractMessageInformationAndProcessPoints(reaction, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID))
+            }
+            if (reaction.message.channel.id === process.env.INTRO_CHANNEL_ID) {
+                const emoji = '✅';
+                if (reaction.emoji.name === emoji) {
+                    const server = client.guilds.cache.find(guild => guild.id === serverId);
+                    if (server) {
+                        const guildMember = server.member(user as User);
+                        if (guildMember) {
+                            const fetchedMember = await guildMember.fetch();
+                            // cant create an application channel if you already have a role
+                            if (fetchedMember?.roles.cache.array().filter(x => x.name !== '@everyone').length) {
+                                console.log(fetchedMember?.roles.cache.array());
+                                await reaction.users.remove(user as User);
+                                return;
+                            }
+                            await createApplicationChannel(server, user, client.user?.id)
+                        }
+                    }
+                    await reaction.users.remove(user as User);
+                }
             }
         });
 
@@ -151,7 +178,7 @@ dotenv.config();
             }
         });
 
-        client.on('guildMemberAdd', async (member) => {
+/*        client.on('guildMemberAdd', async (member) => {
             await member.send('', {
                 files: [
                     './assets/chilltopia-banner.png',
@@ -159,7 +186,7 @@ dotenv.config();
                 ]
             });
             await member.send(Rules);
-        });
+        });*/
 
         client.on('guildMemberRemove', async (member) => {
             if (process.env.REPORTING_CHANNEL_ID) {
