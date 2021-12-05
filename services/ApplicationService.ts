@@ -50,6 +50,11 @@ export const sendQuestions = async (message: Message, server: Guild, approvalCha
 
 export const createApplicationChannel = async (server: Guild, applicant:  User | PartialUser, botId?: string) => {
     const channelName = `application-${applicant.username}`
+    const applicationChannel = server.channels.cache.find(x => x.name === channelName);
+    if (applicationChannel) {
+        console.log('application channel already exists');
+        return;
+    }
     const channel = await server.channels.create(channelName, {
         type: 'text',
         topic: 'application'
@@ -94,5 +99,5 @@ export const createApplicationChannel = async (server: Guild, applicant:  User |
             deny: ['VIEW_CHANNEL']
         }
     ]);
-    await channel.send(`Welcome <@${applicant.id}>! To start your application type !chill apply`);
+    await channel.send(`Welcome <@${applicant.id}>! To start your application type \`!chill apply\``);
 }
