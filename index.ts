@@ -40,7 +40,6 @@ const rateLimitSeconds = 2;
             try {
                 scheduleReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
                 scheduleReportMembersNotInClan(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.NOT_IN_CLAN_ROLE_ID ?? '')
-                scheduleReportNominationResults(client, process.env.NOMINATION_RESULTS_CHANNEL_ID ?? '', serverId ?? '');
             } catch (e) {
                 console.error(e);
                 console.error("failed to initialize reporting tasks");
@@ -220,9 +219,9 @@ const rateLimitSeconds = 2;
                 const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
                 if (reportingChannel && reportingChannel.isText()) {
                     try {
-                        let message = `<@${member.id}> has left the server.`;
+                        let message = `${member.displayName} has left the server.`;
                         if (member.nickname) {
-                            message += ` OSRS name is ${member.nickname}.\nCheck the in game clan to see if they are still there. If not, consider removing them from wise old man.`
+                            message += ` OSRS name was ${member.nickname}.\nCheck the in game clan to see if they are still there. If not, consider removing them from wise old man.`
                         }
                         await reportingChannel.send(message);
                     } catch (e) {
