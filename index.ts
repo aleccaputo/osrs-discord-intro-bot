@@ -159,9 +159,14 @@ const rateLimitSeconds = 2;
                         if (adminChannel && adminChannel.isText()) {
                             try {
                                 const syncedReport = await getConsolidatedMemberDifferencesAsync(server);
-                                const message = formatSyncMessage(syncedReport);
-                                await adminChannel.send(message, {split: true});
+                                if (syncedReport.length) {
+                                    const message = formatSyncMessage(syncedReport);
+                                    await adminChannel.send(message, {split: true});
+                                } else {
+                                    await adminChannel.send('Members are all synced');
+                                }
                             } catch (e) {
+                                console.error(e);
                                 await adminChannel.send('Error syncing members');
                             }
                         }

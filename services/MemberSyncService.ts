@@ -17,28 +17,29 @@ export const getConsolidatedMemberDifferencesAsync = async (server: Guild): Prom
         result[filter.displayName.toLowerCase()] = filter;
         return result;
     }, {} as Record<string, WomMember>);
-
     const newModel: Array<IMemberSyncModel | null> = discordMembers.map(dm => {
-        const womMember = womDict[dm.displayName.toLowerCase()];
-        const memberRoleIds = dm.roles.cache.map(role => role.id);
-        const currentRanks = TimeRoles.filter(x => memberRoleIds.includes(x.id));
-        const highestDiscordRank = currentRanks.reduce((prev, current) => prev.order > current.order ? prev : current);
+        const womMember = womDict[dm.nickname?.toLowerCase() ?? dm.displayName.toLowerCase()];
+        if (womMember) {
+            const memberRoleIds = dm.roles.cache.map(role => role.id);
+            const currentRanks = TimeRoles.filter(x => memberRoleIds.includes(x.id));
+            const highestDiscordRank = currentRanks.reduce((prev, current) => prev.order > current.order ? prev : current);
 
-        const womRank = womMember.role;
-        const mappedWomRank = TimeRoles.find(x => x.name.toLowerCase() === womRank.toLowerCase());
-        if (mappedWomRank) {
-            if (highestDiscordRank.order > mappedWomRank.order) {
-                return {
-                    isInGameLowerThanDiscord: true,
-                    discordId: dm.id,
-                    higherRank: highestDiscordRank.name
-                } as IMemberSyncModel
-            } else if (highestDiscordRank.order < mappedWomRank.order) {
-                return {
-                    isInGameLowerThanDiscord: false,
-                    discordId: dm.id,
-                    higherRank: mappedWomRank.name
-                } as IMemberSyncModel
+            const womRank = womMember.role;
+            const mappedWomRank = TimeRoles.find(x => x.name.toLowerCase() === womRank.toLowerCase());
+            if (mappedWomRank) {
+                if (highestDiscordRank.order > mappedWomRank.order) {
+                    return {
+                        isInGameLowerThanDiscord: true,
+                        discordId: dm.id,
+                        higherRank: highestDiscordRank.name
+                    } as IMemberSyncModel
+                } else if (highestDiscordRank.order < mappedWomRank.order) {
+                    return {
+                        isInGameLowerThanDiscord: false,
+                        discordId: dm.id,
+                        higherRank: mappedWomRank.name
+                    } as IMemberSyncModel
+                }
             }
         }
         return null;
