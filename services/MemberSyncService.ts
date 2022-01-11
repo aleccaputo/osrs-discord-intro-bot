@@ -22,7 +22,7 @@ export const getConsolidatedMemberDifferencesAsync = async (server: Guild): Prom
         if (womMember) {
             const memberRoleIds = dm.roles.cache.map(role => role.id);
             const currentRanks = TimeRoles.filter(x => memberRoleIds.includes(x.id));
-            if (currentRanks) {
+            if (currentRanks.length) {
                 const highestDiscordRank = currentRanks.reduce((prev, current) => prev.order > current.order ? prev : current);
 
                 const womRank = womMember.role;
