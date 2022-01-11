@@ -5,3 +5,5 @@ Currently handles:
 - New member applications
 - Moderator commands
 - Daily Rank reports
+- Discord and WOM rank sync
+- Points system.
