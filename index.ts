@@ -156,18 +156,21 @@ const rateLimitSeconds = 2;
                             }
                         }
                     } else if (command === 'womsync') {
-                        if (adminChannel && adminChannel.isText()) {
-                            try {
-                                const syncedReport = await getConsolidatedMemberDifferencesAsync(server);
-                                if (syncedReport.length) {
-                                    const message = formatSyncMessage(syncedReport);
-                                    await adminChannel.send(message, {split: true});
-                                } else {
-                                    await adminChannel.send('Members are all synced');
+                        if (process.env.REPORTING_CHANNEL_ID) {
+                            const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
+                            if (reportingChannel && reportingChannel.isText()) {
+                                try {
+                                    const syncedReport = await getConsolidatedMemberDifferencesAsync(server);
+                                    if (syncedReport.length) {
+                                        const message = formatSyncMessage(syncedReport);
+                                        await reportingChannel.send(message, {split: true});
+                                    } else {
+                                        await reportingChannel.send('Members are all synced');
+                                    }
+                                } catch (e) {
+                                    console.error(e);
+                                    await reportingChannel.send('Error syncing members');
                                 }
-                            } catch (e) {
-                                console.error(e);
-                                await adminChannel.send('Error syncing members');
                             }
                         }
                     }
