@@ -4,9 +4,7 @@ import {
     initializeNominationReport,
     scheduleReportMembersEligibleForRankUp,
     scheduleReportMembersNotInClan,
-    scheduleReportNominationResults
 } from "./services/ReportingService";
-import {Rules} from "./services/constants/rules";
 import {ApplicationQuestions} from "./services/constants/application-questions";
 import {AwardQuestions} from "./services/constants/award-questions";
 import {createApplicationChannel, sendQuestions} from "./services/ApplicationService";
@@ -21,6 +19,7 @@ import {
 } from "./services/DropSubmissionService";
 import {createUser, getUser, modifyPoints} from "./services/UserService";
 import {User} from "discord.js";
+import {formatSyncMessage, getConsolidatedMemberDifferencesAsync} from "./services/MemberSyncService";
 
 dotenv.config();
 let lastRequestForPointsTime: number | null = null;
@@ -154,6 +153,16 @@ const rateLimitSeconds = 2;
                                 if (newPoints !== null) {
                                     await adminChannel.send(`${formatDiscordUserTag(userId)} now has ${newPoints} points`);
                                 }
+                            }
+                        }
+                    } else if (command === 'womsync') {
+                        if (adminChannel && adminChannel.isText()) {
+                            try {
+                                const syncedReport = await getConsolidatedMemberDifferencesAsync(server);
+                                const message = formatSyncMessage(syncedReport);
+                                await adminChannel.send(message, {split: true});
+                            } catch (e) {
+                                await adminChannel.send('Error syncing members');
                             }
                         }
                     }
