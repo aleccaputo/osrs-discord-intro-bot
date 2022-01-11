@@ -5,6 +5,7 @@ interface Role {
     name: string,
     id: string;
     order: number;
+    womName: string;
 }
 
 export interface TimeRole extends Role {
@@ -15,6 +16,7 @@ export interface TimeRole extends Role {
 export const TimeRoles: Array<TimeRole> = [
     {
         name: 'Short Green Guy Rank',
+        womName: 'short green guy',
         id: process.env.RANK_ONE_ID ?? '1',
         minMonths: 0,
         maxMonths: 1,
@@ -22,6 +24,7 @@ export const TimeRoles: Array<TimeRole> = [
     },
     {
         name: 'Goblin Rank',
+        womName: 'goblin',
         id: process.env.RANK_TWO_ID ?? '2',
         minMonths: 1,
         maxMonths: 3,
@@ -29,6 +32,7 @@ export const TimeRoles: Array<TimeRole> = [
     },
     {
         name: 'Bob Rank',
+        womName: 'bob',
         id: process.env.RANK_THREE_ID ?? '3',
         minMonths: 3,
         maxMonths: 6,
@@ -36,6 +40,7 @@ export const TimeRoles: Array<TimeRole> = [
     },
     {
         name: 'Imp Rank',
+        womName: 'imp',
         id: process.env.RANK_FOUR_ID ?? '4',
         minMonths: 6,
         maxMonths: 10000,

@@ -26,7 +26,7 @@ export const getConsolidatedMemberDifferencesAsync = async (server: Guild): Prom
                 const highestDiscordRank = currentRanks.reduce((prev, current) => prev.order > current.order ? prev : current);
 
                 const womRank = womMember.role;
-                const mappedWomRank = TimeRoles.find(x => x.name.toLowerCase() === womRank?.toLowerCase());
+                const mappedWomRank = TimeRoles.find(x => x.womName.toLowerCase() === womRank?.toLowerCase());
                 if (mappedWomRank) {
                     if (highestDiscordRank.order > mappedWomRank.order) {
                         return {
