@@ -128,6 +128,25 @@ const rateLimitSeconds = 2;
                         const privateMessage = await privateSubmissionsChannel.send(`<@${message.author.id}>`, messageAttachments);
                         await reactWithBasePoints(privateMessage);
                     }
+                    else {
+                        const {command} = parseServerCommand(message.content);
+                        if (command === 'mypoints') {
+                            const publicSubmissionsChannel = client.channels.cache.get(process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID);
+                            const userId = message.author.id;
+                            try {
+                                const dbUser = await getUser(userId);
+                                if (publicSubmissionsChannel && publicSubmissionsChannel.isText() && dbUser) {
+                                    await publicSubmissionsChannel.send(`<@${userId}> has ${dbUser.points} points`)
+                                } else {
+                                    return;
+                                }
+
+                            } catch (e) {
+                                console.error("unable to fetch a users points", e);
+                                return;
+                            }
+                        }
+                    }
                 } else if (message.channel.id === process.env.ADMIN_CHANNEL_ID) {
                     const adminChannel = client.channels.cache.get(process.env.ADMIN_CHANNEL_ID);
                     const {command, context, context2} = parseServerCommand(message.content);
@@ -144,7 +163,7 @@ const rateLimitSeconds = 2;
                             const userId = stripDiscordCharactersFromId(context ?? '');
                             const pointNumber = parseInt(context2.substring(1), 10);
                             if (operator !== '+' && operator !== '-' || !userId) {
-                                await adminChannel.send('Invalid command. Please user the form `!relax modifyPoints @discordNickname +10` or to subtract `-10`');
+                                await adminChannel.send('Invalid command. Please user the form `!chill modifyPoints @discordNickname +10` or to subtract `-10`');
                                 return;
                             }
                             const user = await getUser(userId);
