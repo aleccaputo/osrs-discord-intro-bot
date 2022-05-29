@@ -23,7 +23,8 @@ import {formatSyncMessage, getConsolidatedMemberDifferencesAsync} from "./servic
 
 dotenv.config();
 let lastRequestForPointsTime: number | null = null;
-const rateLimitSeconds = 2;
+const rateLimitSeconds = 1;
+
 
 ;(async () => {
     try {
@@ -131,6 +132,10 @@ const rateLimitSeconds = 2;
                     else {
                         const {command} = parseServerCommand(message.content);
                         if (command === 'mypoints') {
+                            // rate limit any requests that are checking non-discord apis (ie internal storage)
+                            if (lastRequestForPointsTime && message.createdTimestamp - (rateLimitSeconds * 1000) < lastRequestForPointsTime) {
+                                return;
+                            }
                             const publicSubmissionsChannel = client.channels.cache.get(process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID);
                             const userId = message.author.id;
                             try {
