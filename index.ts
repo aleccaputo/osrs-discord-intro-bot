@@ -122,7 +122,7 @@ const rateLimitSeconds = 1;
                         });
                     }
                 // handle forwarding drop submissions to private channel
-                } else if (message.channel.id === process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID && process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
+                } else if ((message.channel.id === process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID || message.channel.id === process.env.BINGO_SUBMISSION_CHANNEL_ID) && process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
                     const privateSubmissionsChannel = client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID);
                     const messageAttachments = message.attachments.size > 0 ? message.attachments.array() : null;
                     if (privateSubmissionsChannel && messageAttachments && privateSubmissionsChannel.isText()) {
@@ -136,7 +136,7 @@ const rateLimitSeconds = 1;
                             if (lastRequestForPointsTime && message.createdTimestamp - (rateLimitSeconds * 1000) < lastRequestForPointsTime) {
                                 return;
                             }
-                            const publicSubmissionsChannel = client.channels.cache.get(process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID);
+                            const publicSubmissionsChannel = client.channels.cache.get(process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID ?? '');
                             const userId = message.author.id;
                             try {
                                 const dbUser = await getUser(userId);
