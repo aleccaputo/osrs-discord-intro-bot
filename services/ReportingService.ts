@@ -1,16 +1,19 @@
 import {schedule} from 'node-cron';
 import type {Client} from "discord.js";
 import dayjs from "dayjs";
-import {TimeRole, TimeRoles} from "./constants/roles";
+import {PointsRole, PointsRoles, TimeRole, TimeRoles} from "./constants/roles";
 import {GuildMember} from "discord.js";
 import {reportCurrentVotes} from "./CommunityAwardService";
+import mongoose from "mongoose";
+import {connect} from "./DataService";
+import User from "../models/User";
 
-interface IMemberDueForRank {
+interface IMemberDueForRank<T> {
     userId: string;
-    nextRank: TimeRole;
+    nextRank: T;
 }
 
-const formatRankUpMessage = (members: Array<IMemberDueForRank | undefined>) => {
+const formatRankUpMessage = (members: Array<IMemberDueForRank<TimeRole | PointsRole> | undefined>) => {
     let message = 'We have some users ready to rank up!'
     members.forEach(member => {
         if (member) {
@@ -55,7 +58,7 @@ const initializeReportMembersEligibleForRankUp = async (client: Client, reportin
                             return {
                                 userId: member.id,
                                 nextRank: nextRank
-                            } as IMemberDueForRank
+                            } as IMemberDueForRank<TimeRole>
                         }
                     }
                 }
@@ -98,6 +101,48 @@ const initializeReportMembersNotInClan = async (client: Client, reportingChannel
     }
 }
 
+export const initializeReportMembersEligibleForPointsBasedRankUp = async (client: Client, reportingChannelId: string, serverId: string) => {
+    if (mongoose.connection.readyState === 0) {
+        await connect();
+    }
+    const server = client.guilds.cache.find(guild => guild.id === serverId);
+    if (server) {
+        const currentMembers = await server.members.fetch();
+        const allInternalUsers = await User.find({});
+        // filter only verified and they must already have a rank
+        const rankUps = currentMembers.array().filter(allMember => allMember.roles.cache.array()
+            .filter(x =>  x.id === process.env.VERIFIED_ROLE_ID).length)
+            .filter(x => x.roles.cache.some(y => PointsRoles.filter(z => z.id === y.id).length > 0)).map(member => {
+                const existing = allInternalUsers.find(x => x.discordId === member.id);
+                if (existing) {
+                    const currentPoints = existing.points;
+                    const roleBasedOnPoints = PointsRoles.find(x => currentPoints >= x.minPoints && currentPoints < x.maxPoints);
+                    const memberRoleIds = member.roles.cache.map(role => role.id);
+                    // they are the rank they should be
+                    if (memberRoleIds.find(x => x === roleBasedOnPoints?.id)) {
+                        return;
+                    }
+                    return {
+                        userId: member.id,
+                        nextRank: roleBasedOnPoints
+                    } as IMemberDueForRank<PointsRole>
+                }
+            }).filter(x => x !== undefined && x.userId !== client.user?.id);
+        if (rankUps && rankUps.length) {
+            const reportingChannel = client.channels.cache.get(reportingChannelId);
+            if (reportingChannel && reportingChannel.isText()) {
+                const message = formatRankUpMessage(rankUps)
+                try {
+                    await reportingChannel.send(message, {split: true});
+                } catch (e) {
+                    console.log('Error sending rank up report to channel');
+                    console.log(e);
+                }
+            }
+        }
+    }
+}
+
 export const initializeNominationReport = async (client: Client, reportingChannelId: string, serverId: string) => {
     console.log('Kicking off award nomination report...');
     const server = client.guilds.cache.find(guild => guild.id === serverId);
@@ -117,7 +162,7 @@ export const initializeNominationReport = async (client: Client, reportingChanne
 export const scheduleReportMembersEligibleForRankUp = (client: Client, reportingChannelId: string, serverId: string) => {
     schedule('0 21 * * *',  async () => {
         try {
-            await initializeReportMembersEligibleForRankUp(client, reportingChannelId, serverId)
+            await initializeReportMembersEligibleForPointsBasedRankUp(client, reportingChannelId, serverId)
         } catch (e) {
             console.log(e);
         }

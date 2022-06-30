@@ -17,9 +17,11 @@ import {
     PointsAction,
     reactWithBasePoints
 } from "./services/DropSubmissionService";
-import {createUser, getUser, modifyPoints} from "./services/UserService";
+import {createUser, getUser, modifyNicknamePoints, modifyPoints} from "./services/UserService";
 import {User} from "discord.js";
 import {formatSyncMessage, getConsolidatedMemberDifferencesAsync} from "./services/MemberSyncService";
+import {NicknameLengthException} from "./exceptions/NicknameLengthException";
+import {UserExistsException} from "./exceptions/UserExistsException";
 
 dotenv.config();
 let lastRequestForPointsTime: number | null = null;
@@ -96,7 +98,11 @@ const rateLimitSeconds = 1;
                                     if (process.env.REPORTING_CHANNEL_ID) {
                                         const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
                                         if (reportingChannel && reportingChannel.isText()) {
-                                            await reportingChannel.send(`Unable to add <@${userId}> as a user. Please contact a developer`)
+                                            if (e instanceof UserExistsException) {
+                                                await reportingChannel.send(`<@${userId}> is already a user in the system (potential server re-join). Please ensure their discord profile is set correctly.`);
+                                            } else {
+                                                await reportingChannel.send(`Unable to add <@${userId}> as a user. Please contact a developer`);
+                                            }
                                         }
                                     }
                                 }
@@ -174,8 +180,20 @@ const rateLimitSeconds = 1;
                             const user = await getUser(userId);
                             if (user) {
                                 const newPoints = await modifyPoints(user, pointNumber, operator === '+' ? PointsAction.ADD : PointsAction.SUBTRACT);
-                                if (newPoints !== null) {
+                                if (newPoints) {
                                     await adminChannel.send(`${formatDiscordUserTag(userId)} now has ${newPoints} points`);
+                                    const serverMember = server.member(userId);
+                                    try {
+                                        await modifyNicknamePoints(newPoints, serverMember)
+                                    } catch (e) {
+                                        if (e instanceof NicknameLengthException) {
+                                            await adminChannel.send('Nickname is either too long or will be too long. Must be less than or equal to 32 characters.')
+                                            return;
+                                        } else {
+                                            await adminChannel.send(`Unable to set points or modify nickname for <@${userId}>`);
+                                            return;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -222,7 +240,8 @@ const rateLimitSeconds = 1;
                 return;
             }
             if (reaction.message.channel.id === process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
-                await extractMessageInformationAndProcessPoints(reaction, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID))
+                const server = client.guilds.cache.find(guild => guild.id === serverId);
+                await extractMessageInformationAndProcessPoints(reaction, server, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID))
             }
             if (reaction.message.channel.id === process.env.INTRO_CHANNEL_ID) {
                 const emoji = '✅';
@@ -251,7 +270,8 @@ const rateLimitSeconds = 1;
                 return;
             }
             if (reaction.message.channel.id === process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
-                await extractMessageInformationAndProcessPoints(reaction, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID), PointsAction.SUBTRACT)
+                const server = client.guilds.cache.find(guild => guild.id === serverId);
+                await extractMessageInformationAndProcessPoints(reaction, server, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID), PointsAction.SUBTRACT)
             }
         });
 
