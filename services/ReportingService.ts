@@ -7,6 +7,7 @@ import {reportCurrentVotes} from "./CommunityAwardService";
 import mongoose from "mongoose";
 import {connect} from "./DataService";
 import User from "../models/User";
+import {updateAllMembers} from "./WiseOldManService";
 
 interface IMemberDueForRank<T> {
     userId: string;
@@ -159,6 +160,23 @@ export const initializeNominationReport = async (client: Client, reportingChanne
     }
 }
 
+export const initializeWomUpdateAll = async (client: Client, reportingChannelId: string, serverId: string) => {
+    console.log('Kicking wom update all...');
+    const server = client.guilds.cache.find(guild => guild.id === serverId);
+    if (server) {
+        const reportingChannel = client.channels.cache.get(reportingChannelId);
+        if (reportingChannel && reportingChannel.isText()) {
+            try {
+                await updateAllMembers();
+                await reportingChannel.send("All members in WOM have been updated.");
+            } catch (e) {
+                console.log(e);
+                await reportingChannel.send("Error updating all members in WOM");
+            }
+        }
+    }
+}
+
 export const scheduleReportMembersEligibleForRankUp = (client: Client, reportingChannelId: string, serverId: string) => {
     schedule('0 21 * * *',  async () => {
         try {
@@ -183,6 +201,16 @@ export const scheduleReportMembersNotInClan = (client: Client, reportingChannelI
     schedule('5 21 * * *',  async () => {
         try {
             await initializeReportMembersNotInClan(client, reportingChannelId, serverId, notInClanId)
+        } catch (e) {
+            console.log(e);
+        }
+    });
+}
+
+export const scheduleWomUpdateAll = (client: Client, reportingChannelId: string, serverId: string) => {
+    schedule('0 16 */2 * *',  async () => {
+        try {
+            await initializeWomUpdateAll(client, reportingChannelId, serverId);
         } catch (e) {
             console.log(e);
         }

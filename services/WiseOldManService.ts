@@ -68,3 +68,22 @@ export const getGroupMembersAsync = async (): Promise<Array<WomMember>> => {
     }
     return response.json();
 }
+
+export const updateAllMembers = async (): Promise<void> => {
+    if (!process.env.WISE_OLD_MAN_GROUP_ID) {
+        console.error('No WOM group id set')
+        throw new Error('WOM values not initialized');
+    }
+
+    try {
+        await fetch(`https://api.wiseoldman.net/groups/${parseInt(process.env.WISE_OLD_MAN_GROUP_ID, 10)}/update-all`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({verificationCode: process.env.WISE_OLD_MAN_VERIFICATION_CODE})
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
