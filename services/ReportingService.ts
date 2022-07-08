@@ -8,6 +8,8 @@ import mongoose from "mongoose";
 import {connect} from "./DataService";
 import User from "../models/User";
 import {updateAllMembers} from "./WiseOldManService";
+import fs from "fs";
+import * as fastcsv from 'fast-csv';
 
 interface IMemberDueForRank<T> {
     userId: string;
@@ -177,6 +179,48 @@ export const initializeWomUpdateAll = async (client: Client, reportingChannelId:
     }
 }
 
+export const initializeUserCsvExtract = async (client: Client, adminChannelId: string, serverId: string) => {
+    if (mongoose.connection.readyState === 0) {
+        await connect();
+    }
+    const server = client.guilds.cache.find(guild => guild.id === serverId);
+    const year = dayjs().year();
+    const month = dayjs().month();
+    const day = dayjs().date()
+    const filename = `${year}_${month + 1}_${day}_users_extract.csv`
+    console.log('generating' + filename);
+
+    const writeStream = fs.createWriteStream(`./${filename}`, {flags: 'w+'});
+    try {
+        const allInternalUsers = await User.find({});
+        const stream = fastcsv.format({headers: true});
+        stream.pipe(writeStream);
+        allInternalUsers.map(user => stream.write(user.toJSON()));
+
+        writeStream.on('close', async () => {
+            if (server) {
+                const adminChannel = client.channels.cache.get(adminChannelId);
+                if (adminChannel && adminChannel.isText()) {
+                    try {
+                        await adminChannel.send('Users backup csv generated.', {
+                            split: true, files: [{
+                                attachment: `./${filename}`,
+                                name: filename
+                            }]
+                        });
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+            }
+        });
+        writeStream.end();
+    } catch (e) {
+        console.error('Error creating csv backup for' + filename);
+        writeStream.end();
+    }
+};
+
 export const scheduleReportMembersEligibleForRankUp = (client: Client, reportingChannelId: string, serverId: string) => {
     schedule('0 21 * * *',  async () => {
         try {
@@ -211,6 +255,16 @@ export const scheduleWomUpdateAll = (client: Client, reportingChannelId: string,
     schedule('0 16 */2 * *',  async () => {
         try {
             await initializeWomUpdateAll(client, reportingChannelId, serverId);
+        } catch (e) {
+            console.log(e);
+        }
+    });
+}
+
+export const scheduleUserCsvExtract = (client: Client, adminChannelId: string, serverId: string) => {
+    schedule('0 19 * * *',  async () => {
+        try {
+            await initializeUserCsvExtract(client, adminChannelId, serverId)
         } catch (e) {
             console.log(e);
         }
