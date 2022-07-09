@@ -24,6 +24,7 @@ import {User} from "discord.js";
 import {formatSyncMessage, getConsolidatedMemberDifferencesAsync} from "./services/MemberSyncService";
 import {NicknameLengthException} from "./exceptions/NicknameLengthException";
 import {UserExistsException} from "./exceptions/UserExistsException";
+import {createPointsLeaderboard} from "./services/RankService";
 
 dotenv.config();
 let lastRequestForPointsTime: number | null = null;
@@ -140,13 +141,13 @@ const rateLimitSeconds = 1;
                         await reactWithBasePoints(privateMessage);
                     }
                     else {
+                        const publicSubmissionsChannel = client.channels.cache.get(process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID ?? '');
                         const {command} = parseServerCommand(message.content);
                         if (command === 'mypoints') {
                             // rate limit any requests that are checking non-discord apis (ie internal storage)
                             if (lastRequestForPointsTime && message.createdTimestamp - (rateLimitSeconds * 1000) < lastRequestForPointsTime) {
                                 return;
                             }
-                            const publicSubmissionsChannel = client.channels.cache.get(process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID ?? '');
                             const userId = message.author.id;
                             try {
                                 const dbUser = await getUser(userId);
@@ -158,6 +159,23 @@ const rateLimitSeconds = 1;
 
                             } catch (e) {
                                 console.error("unable to fetch a users points", e);
+                                return;
+                            }
+                        }
+                        if (command === 'leaderboard') {
+                            // rate limit any requests that are checking non-discord apis (ie internal storage)
+                            if (lastRequestForPointsTime && message.createdTimestamp - (rateLimitSeconds * 1000) < lastRequestForPointsTime) {
+                                return;
+                            }
+                            if (publicSubmissionsChannel && publicSubmissionsChannel.isText()) {
+                                try {
+                                    const embed = await createPointsLeaderboard();
+                                    await publicSubmissionsChannel.send({embed: embed});
+                                } catch (e) {
+                                    console.error("unable to create leaderboard", e);
+                                    return;
+                                }
+                            } else {
                                 return;
                             }
                         }

@@ -119,6 +119,7 @@ export const initializeReportMembersEligibleForPointsBasedRankUp = async (client
                 const existing = allInternalUsers.find(x => x.discordId === member.id);
                 if (existing) {
                     const currentPoints = existing.points;
+
                     const roleBasedOnPoints = PointsRoles.find(x => currentPoints >= x.minPoints && currentPoints < x.maxPoints);
                     const memberRoleIds = member.roles.cache.map(role => role.id);
                     // they are the rank they should be

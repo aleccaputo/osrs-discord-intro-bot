@@ -22,9 +22,13 @@ export const createUser = async (member: GuildMember | null) => {
     }).save();
 };
 
-export const getUser = async (discordId: string) => {
+export const getUser = (discordId: string) => {
     return User.findOne({discordId: discordId});
 };
+
+export const getUsersByPointsDesc = () => {
+    return User.find({}).sort({points: -1}).exec();
+}
 
 export const modifyPoints = async ( user: IUser | null, pointValue: number, action: PointsAction) => {
     if (user) {
