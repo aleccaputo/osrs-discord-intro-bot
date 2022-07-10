@@ -14,6 +14,6 @@ export const createPointsLeaderboard = async () => {
         color: 0x8b0000,
         title: 'ChillTopia Leaderboard',
         description: 'Current clan point leaders',
-        fields: test
+        fields: [test]
     };
 }
