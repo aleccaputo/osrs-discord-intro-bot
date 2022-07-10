@@ -36,7 +36,7 @@ export const convertNumberToEmoji = (num: number) => {
         case 9:
             return NumberEmojis.NINE;
         case 10:
-            return NumberEmojis.TWO;
+            return NumberEmojis.TEN;
     }
 }
 // wonder if the intl lib has something for this
