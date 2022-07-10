@@ -1,7 +1,7 @@
 import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
 import {
-    initializeNominationReport,
+    initializeNominationReport, initializeReportMembersEligibleForPointsBasedRankUp,
     scheduleReportMembersEligibleForRankUp,
     scheduleReportMembersNotInClan,
     scheduleUserCsvExtract,
@@ -44,6 +44,7 @@ const rateLimitSeconds = 1;
             console.log('ready');
             try {
                 scheduleReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
+                await initializeReportMembersEligibleForPointsBasedRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
                 scheduleReportMembersNotInClan(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.NOT_IN_CLAN_ROLE_ID ?? '');
                 scheduleWomUpdateAll(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
                 scheduleUserCsvExtract(client, process.env.ADMIN_CHANNEL_ID ?? '', serverId ?? '');
