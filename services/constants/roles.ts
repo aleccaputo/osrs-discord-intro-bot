@@ -64,56 +64,56 @@ export const PointsRoles: Array<PointsRole> = [
     {
         name: 'Sapphire',
         id: process.env.RANK_TWO_ID ?? '2',
-        minPoints: 0,
-        maxPoints: 100,
+        minPoints: 100,
+        maxPoints: 200,
         order: 2,
         womName: 'sapphire'
     },
     {
         name: 'Emerald',
         id: process.env.RANK_THREE_ID ?? '3',
-        minPoints: 100,
-        maxPoints: 200,
+        minPoints: 200,
+        maxPoints: 300,
         order: 3,
         womName: 'emerald'
     },
     {
         name: 'Ruby',
         id: process.env.RANK_FOUR_ID ?? '4',
-        minPoints: 200,
-        maxPoints: 300,
+        minPoints: 300,
+        maxPoints: 400,
         order: 4,
         womName: 'ruby'
     },
     {
         name: 'Diamond',
         id: process.env.RANK_FIVE_ID ?? '5',
-        minPoints: 300,
-        maxPoints: 400,
+        minPoints: 400,
+        maxPoints: 500,
         order: 5,
         womName: 'diamond'
     },
     {
         name: 'Dragonstone',
         id: process.env.RANK_SIX_ID ?? '6',
-        minPoints: 400,
-        maxPoints: 600,
+        minPoints: 500,
+        maxPoints: 800,
         order: 6,
         womName: 'dragonstone'
     },
     {
         name: 'Onyx',
         id: process.env.RANK_SEVEN_ID ?? '7',
-        minPoints: 600,
-        maxPoints: 800,
+        minPoints: 800,
+        maxPoints: 1000,
         order: 7,
         womName: 'onyx'
     },
     {
         name: 'Zenyte',
         id: process.env.RANK_EIGHT_ID ?? '8',
-        minPoints: 800,
-        maxPoints: 1000,
+        minPoints: 1000,
+        maxPoints: 100000,
         order: 7,
         womName: 'zenyte'
     }
