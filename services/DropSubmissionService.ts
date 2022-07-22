@@ -80,7 +80,7 @@ export const extractMessageInformationAndProcessPoints = async (reaction: Messag
     if (points && privateSubmissionsChannel && privateSubmissionsChannel.isText()) {
         try {
             await privateSubmissionsChannel.send(`<@${userId}> now has ${points} points`);
-            pointsAction === PointsAction.ADD ? await message.react(whiteCheckEmoji) : await message.reactions.cache.find(x => x.emoji.name === 'white_check_mark')?.remove();
+            pointsAction === PointsAction.ADD ? await message.react(whiteCheckEmoji) : await message.reactions.cache.find(x => x.emoji.name === whiteCheckEmoji)?.remove();
             if (serverMember) {
                 await modifyNicknamePoints(points, serverMember);
             }
