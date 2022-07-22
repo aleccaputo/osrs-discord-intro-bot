@@ -1,4 +1,4 @@
-import {Channel, Emoji, Guild, Message, MessageReaction, TextChannel} from "discord.js";
+import {Channel, Emoji, Guild, Message, MessageReaction, PartialUser, TextChannel, User} from "discord.js";
 import {getUser, modifyNicknamePoints, modifyPoints} from "./UserService";
 import {NicknameLengthException} from "../exceptions/NicknameLengthException";
 
@@ -64,11 +64,11 @@ export enum PointsAction {
     SUBTRACT = 'subtract'
 }
 
-export const extractMessageInformationAndProcessPoints = async (reaction: MessageReaction, server?: Guild, privateSubmissionsChannel?: Channel, pointsAction: PointsAction = PointsAction.ADD, clientId?: string) => {
+export const extractMessageInformationAndProcessPoints = async (reaction: MessageReaction, server?: Guild, privateSubmissionsChannel?: Channel, pointsAction: PointsAction = PointsAction.ADD, clientId?: string, user?: User | PartialUser) => {
     const message = await reaction.message.fetch();
     const hasReaction = message.reactions.cache.some(x => x.users.cache.filter(y => y.id !== clientId).array().length > 1);
-    if (hasReaction) {
-        await reaction.remove();
+    if (hasReaction && user && pointsAction === PointsAction.ADD) {
+        await reaction.users.remove(user as User);
         return;
     }
     const userId = message.content.replace('<@', '').slice(0, -1);
