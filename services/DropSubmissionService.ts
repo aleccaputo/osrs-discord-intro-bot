@@ -66,7 +66,7 @@ export enum PointsAction {
 
 export const extractMessageInformationAndProcessPoints = async (reaction: MessageReaction, server?: Guild, privateSubmissionsChannel?: Channel, pointsAction: PointsAction = PointsAction.ADD, clientId?: string) => {
     const message = await reaction.message.fetch();
-    const hasReaction = message.reactions.cache.some(x => x.users.cache.filter(y => y.id !== clientId).array().length > 0);
+    const hasReaction = message.reactions.cache.some(x => x.users.cache.filter(y => y.id !== clientId).array().length > 1);
     if (hasReaction) {
         await reaction.remove();
         return;
