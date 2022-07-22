@@ -1,7 +1,9 @@
 import * as Discord from 'discord.js';
+import {User} from 'discord.js';
 import * as dotenv from 'dotenv';
 import {
-    initializeNominationReport, initializeReportMembersEligibleForPointsBasedRankUp,
+    initializeNominationReport,
+    initializeReportMembersEligibleForPointsBasedRankUp,
     scheduleReportMembersEligibleForRankUp,
     scheduleReportMembersNotInClan,
     scheduleUserCsvExtract,
@@ -20,7 +22,6 @@ import {
     reactWithBasePoints
 } from "./services/DropSubmissionService";
 import {createUser, getUser, modifyNicknamePoints, modifyPoints} from "./services/UserService";
-import {User} from "discord.js";
 import {formatSyncMessage, getConsolidatedMemberDifferencesAsync} from "./services/MemberSyncService";
 import {NicknameLengthException} from "./exceptions/NicknameLengthException";
 import {UserExistsException} from "./exceptions/UserExistsException";
@@ -264,7 +265,7 @@ const rateLimitSeconds = 1;
             }
             if (reaction.message.channel.id === process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
                 const server = client.guilds.cache.find(guild => guild.id === serverId);
-                await extractMessageInformationAndProcessPoints(reaction, server, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID), client.user?.id)
+                await extractMessageInformationAndProcessPoints(reaction, server, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID), PointsAction.ADD, client.user?.id)
             }
             if (reaction.message.channel.id === process.env.INTRO_CHANNEL_ID) {
                 const emoji = '✅';
