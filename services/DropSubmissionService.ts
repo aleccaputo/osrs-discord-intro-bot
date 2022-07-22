@@ -71,6 +71,9 @@ export const extractMessageInformationAndProcessPoints = async (reaction: Messag
         await reaction.users.remove(user as User);
         return;
     }
+    if (hasReaction && pointsAction === PointsAction.SUBTRACT) {
+        return;
+    }
     const userId = message.content.replace('<@', '').slice(0, -1);
     const points = await processPoints(reaction.emoji, userId, pointsAction);
     const serverMember = server?.member(userId);
