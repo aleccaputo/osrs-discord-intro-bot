@@ -64,15 +64,20 @@ export enum PointsAction {
     SUBTRACT = 'subtract'
 }
 
-export const extractMessageInformationAndProcessPoints = async (reaction: MessageReaction, server?: Guild, privateSubmissionsChannel?: Channel, pointsAction: PointsAction = PointsAction.ADD) => {
+export const extractMessageInformationAndProcessPoints = async (reaction: MessageReaction, server?: Guild, privateSubmissionsChannel?: Channel, pointsAction: PointsAction = PointsAction.ADD, clientId?: string) => {
     const message = await reaction.message.fetch();
+    const hasReaction = message.reactions.cache.some(x => x.users.cache.filter(y => y.id !== clientId).array().length > 0);
+    if (hasReaction) {
+        await reaction.remove();
+        return;
+    }
     const userId = message.content.replace('<@', '').slice(0, -1);
     const points = await processPoints(reaction.emoji, userId, pointsAction);
     const serverMember = server?.member(userId);
     if (points && privateSubmissionsChannel && privateSubmissionsChannel.isText()) {
         try {
             await privateSubmissionsChannel.send(`<@${userId}> now has ${points} points`);
-            await message.react(whiteCheckEmoji);
+            pointsAction === PointsAction.ADD ? await message.react(whiteCheckEmoji) : await message.reactions.cache.find(x => x.emoji.name === 'white_check_mark')?.remove();
             if (serverMember) {
                 await modifyNicknamePoints(points, serverMember);
             }

@@ -264,7 +264,7 @@ const rateLimitSeconds = 1;
             }
             if (reaction.message.channel.id === process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
                 const server = client.guilds.cache.find(guild => guild.id === serverId);
-                await extractMessageInformationAndProcessPoints(reaction, server, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID))
+                await extractMessageInformationAndProcessPoints(reaction, server, client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID), client.user?.id)
             }
             if (reaction.message.channel.id === process.env.INTRO_CHANNEL_ID) {
                 const emoji = '✅';
