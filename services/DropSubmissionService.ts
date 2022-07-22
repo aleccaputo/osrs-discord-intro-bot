@@ -15,6 +15,8 @@ const NumberEmojis = {
     TEN: '🔟'
 }
 
+const whiteCheckEmoji = '✅';
+
 export const convertNumberToEmoji = (num: number) => {
     switch (num) {
         case 1:
@@ -70,6 +72,7 @@ export const extractMessageInformationAndProcessPoints = async (reaction: Messag
     if (points && privateSubmissionsChannel && privateSubmissionsChannel.isText()) {
         try {
             await privateSubmissionsChannel.send(`<@${userId}> now has ${points} points`);
+            await message.react(whiteCheckEmoji);
             if (serverMember) {
                 await modifyNicknamePoints(points, serverMember);
             }
