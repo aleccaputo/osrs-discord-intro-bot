@@ -171,7 +171,7 @@ const rateLimitSeconds = 1;
                             }
                             if (publicSubmissionsChannel && publicSubmissionsChannel.isText()) {
                                 try {
-                                    const embed = await createPointsLeaderboard();
+                                    const embed = await createPointsLeaderboard(server);
                                     await publicSubmissionsChannel.send({embed: embed});
                                 } catch (e) {
                                     console.error("unable to create leaderboard", e);
