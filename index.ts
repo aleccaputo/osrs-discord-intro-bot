@@ -1,8 +1,7 @@
 import * as Discord from 'discord.js';
-import {User} from 'discord.js';
+import {Intents, User} from 'discord.js';
 import * as dotenv from 'dotenv';
 import {
-    initializeNominationReport,
     initializeReportMembersEligibleForPointsBasedRankUp,
     scheduleReportMembersEligibleForRankUp,
     scheduleReportMembersNotInClan,
@@ -10,10 +9,8 @@ import {
     scheduleWomUpdateAll,
 } from "./services/ReportingService";
 import {ApplicationQuestions} from "./services/constants/application-questions";
-import {AwardQuestions} from "./services/constants/award-questions";
 import {createApplicationChannel, sendQuestions} from "./services/ApplicationService";
 import {formatDiscordUserTag, parseServerCommand, stripDiscordCharactersFromId} from "./services/MessageHelpers";
-import {ensureUniqueAnswers, sendAwardQuestions} from "./services/CommunityAwardService";
 import {connect} from "./services/DataService";
 import {addMemberToWiseOldMan} from "./services/WiseOldManService";
 import {
@@ -26,6 +23,7 @@ import {formatSyncMessage, getConsolidatedMemberDifferencesAsync} from "./servic
 import {NicknameLengthException} from "./exceptions/NicknameLengthException";
 import {UserExistsException} from "./exceptions/UserExistsException";
 import {createPointsLeaderboard} from "./services/RankService";
+import * as Util from 'util';
 
 dotenv.config();
 let lastRequestForPointsTime: number | null = null;
@@ -36,7 +34,16 @@ const rateLimitSeconds = 1;
     try {
         const serverId = process.env.SERVER;
         // https://github.com/discordjs/discord.js/issues/4980#issuecomment-723519865
-        const client = new Discord.Client({partials: ['USER', 'REACTION', 'MESSAGE']});
+        const client = new Discord.Client({intents: [
+                Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS,
+                Intents.FLAGS.GUILD_INVITES,
+                Intents.FLAGS.GUILD_MEMBERS,
+                Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+                Intents.FLAGS.GUILD_MESSAGES,
+                Intents.FLAGS.GUILDS
+            ],
+            partials: ['USER', 'REACTION', 'MESSAGE']
+        });
 
         await client.login(process.env.TOKEN);
         await connect();
@@ -55,7 +62,7 @@ const rateLimitSeconds = 1;
             }
         });
 
-        client.on('message', async (message) => {
+        client.on('messageCreate', async (message) => {
             // don't respond to messages from self
             if (message.author.id === client.user?.id) {
                 return;
@@ -66,68 +73,51 @@ const rateLimitSeconds = 1;
                 return;
             }
             const mods = server.members.cache.filter(member => member.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID));
-
-            if (message.channel.type === "dm") {
-                // they've agreed to the rules, send out the application questions
-                const {command} = parseServerCommand(message.content);
-                if (command === 'nominate') {
-                    const existingEntry = await ensureUniqueAnswers(message.author.id);
-                    if (existingEntry) {
-                        await message.channel.send(`You have already voted this year, thank you!`);
-                        return;
-                    }
-                    await message.channel.send(`Great! I will now send you a series of ${AwardQuestions.length} questions. Please respond to each one with your nominee's OSRS name **EXACTLY AS IT APPEARS IN DISCORD**.\nFor example, if the bot sends you "Best pvmer", you could respond: MrPooter.\n After sending the name, please wait for the next question to be dmed to you.`)
-                    sendAwardQuestions(message, server);
-                }
-            } else {
-                // Accept application for user. must be from a mod and in this channel
-                if (message.channel.id === process.env.AWAITING_APPROVAL_CHANNEL_ID) {
-                    const {command, context} = parseServerCommand(message.content);
-                    if (command === 'confirm' && context) {
-                        // this is returned in the format <!@12345>, so we need to get rid of all the special chars
-                        const userId = (context.replace(/[^0-9]/g, ''));
-                        const user = client.users.cache.get(userId);
-                        if (user) {
-                            const guildMember = server.member(user);
-                            if (process.env.NOT_IN_CLAN_ROLE_ID && process.env.RANK_ONE_ID && process.env.VERIFIED_ROLE_ID) {
-                                await guildMember?.roles.add([process.env.RANK_ONE_ID, process.env.VERIFIED_ROLE_ID]);
-                                await guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
-                                // delete the application channel
-                                const usernameWithoutSpaces = user.username.replace(' ', '-').toLocaleLowerCase();
-                                const applicationChannel = server.channels.cache.find(x => x.name === `application-${usernameWithoutSpaces}`);
-                                if (applicationChannel) {
-                                    await applicationChannel.delete()
-                                }
-                                const ign = guildMember?.nickname;
-                                try {
-                                    await createUser(guildMember);
-                                } catch (e) {
-                                    if (process.env.REPORTING_CHANNEL_ID) {
-                                        const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
-                                        if (reportingChannel && reportingChannel.isText()) {
-                                            if (e instanceof UserExistsException) {
-                                                await reportingChannel.send(`<@${userId}> is already a user in the system (potential server re-join). Please ensure their discord profile is set correctly.`);
-                                            } else {
-                                                await reportingChannel.send(`Unable to add <@${userId}> as a user. Please contact a developer`);
-                                            }
+            // Accept application for user. must be from a mod and in this channel
+            if (message.channel.id === process.env.AWAITING_APPROVAL_CHANNEL_ID) {
+                const {command, context} = parseServerCommand(message.content);
+                if (command === 'confirm' && context) {
+                    // this is returned in the format <!@12345>, so we need to get rid of all the special chars
+                    const userId = (context.replace(/[^0-9]/g, ''));
+                    const user = client.users.cache.get(userId);
+                    if (user) {
+                        const guildMember = server.members.cache.get(user.id);
+                        if (process.env.NOT_IN_CLAN_ROLE_ID && process.env.RANK_ONE_ID && process.env.VERIFIED_ROLE_ID) {
+                            await guildMember?.roles.add([process.env.RANK_ONE_ID, process.env.VERIFIED_ROLE_ID]);
+                            await guildMember?.roles.remove(process.env.NOT_IN_CLAN_ROLE_ID);
+                            // delete the application channel
+                            const usernameWithoutSpaces = user.username.replace(' ', '-').toLocaleLowerCase();
+                            const applicationChannel = server.channels.cache.find(x => x.name === `application-${usernameWithoutSpaces}`);
+                            if (applicationChannel) {
+                                await applicationChannel.delete()
+                            }
+                            const ign = guildMember?.nickname;
+                            try {
+                                await createUser(guildMember);
+                            } catch (e) {
+                                if (process.env.REPORTING_CHANNEL_ID) {
+                                    const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
+                                    if (reportingChannel && reportingChannel.isText()) {
+                                        if (e instanceof UserExistsException) {
+                                            await reportingChannel.send(`<@${userId}> is already a user in the system (potential server re-join). Please ensure their discord profile is set correctly.`);
+                                        } else {
+                                            await reportingChannel.send(`Unable to add <@${userId}> as a user. Please contact a developer`);
                                         }
                                     }
                                 }
-                                if (ign) {
-                                    const response = await addMemberToWiseOldMan(ign);
-                                    if (!response) {
-                                        mods.forEach(mod => mod.send(`Unable to add <@${message.author.id}> to wise old man.`));
-                                    }
+                            }
+                            if (ign) {
+                                const response = await addMemberToWiseOldMan(ign);
+                                if (!response) {
+                                    mods.forEach(mod => mod.send(`Unable to add <@${message.author.id}> to wise old man.`));
                                 }
                             }
                         }
                     }
+                }
                 // handle nomination event
                 } else if (message.channel.id === process.env.NOMINATION_RESULTS_CHANNEL_ID) {
                     const {command} = parseServerCommand(message.content);
-                    if (command === 'nomination-report') {
-                        await initializeNominationReport(client, process.env.NOMINATION_RESULTS_CHANNEL_ID ?? '', serverId ?? '');
-                    }
                     if (command === 'send-questions-to-all') {
                         const members = await server.members.fetch();
                         members.forEach(member => {
@@ -137,9 +127,9 @@ const rateLimitSeconds = 1;
                 // handle forwarding drop submissions to private channel
                 } else if ((message.channel.id === process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID || message.channel.id === process.env.BINGO_SUBMISSION_CHANNEL_ID) && process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
                     const privateSubmissionsChannel = client.channels.cache.get(process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID);
-                    const messageAttachments = message.attachments.size > 0 ? message.attachments.array() : null;
+                    const messageAttachments = message.attachments.size > 0 ? [...message.attachments.values()] : null;
                     if (privateSubmissionsChannel && messageAttachments && privateSubmissionsChannel.isText()) {
-                        const privateMessage = await privateSubmissionsChannel.send(`<@${message.author.id}>`, messageAttachments);
+                        const privateMessage = await privateSubmissionsChannel.send({content: `<@${message.author.id}>`, attachments: messageAttachments});
                         await reactWithBasePoints(privateMessage);
                     }
                     else {
@@ -172,7 +162,7 @@ const rateLimitSeconds = 1;
                             if (publicSubmissionsChannel && publicSubmissionsChannel.isText()) {
                                 try {
                                     const embed = await createPointsLeaderboard(server);
-                                    await publicSubmissionsChannel.send({embed: embed});
+                                    await publicSubmissionsChannel.send({embeds: [embed]});
                                 } catch (e) {
                                     console.error("unable to create leaderboard", e);
                                     return;
@@ -206,7 +196,7 @@ const rateLimitSeconds = 1;
                                 const newPoints = await modifyPoints(user, pointNumber, operator === '+' ? PointsAction.ADD : PointsAction.SUBTRACT);
                                 if (newPoints) {
                                     await adminChannel.send(`${formatDiscordUserTag(userId)} now has ${newPoints} points`);
-                                    const serverMember = server.member(userId);
+                                    const serverMember = server.members.cache.get(user.id);;
                                     try {
                                         await modifyNicknamePoints(newPoints, serverMember)
                                     } catch (e) {
@@ -229,7 +219,7 @@ const rateLimitSeconds = 1;
                                     const syncedReport = await getConsolidatedMemberDifferencesAsync(server);
                                     if (syncedReport.length) {
                                         const message = formatSyncMessage(syncedReport);
-                                        await reportingChannel.send(message, {split: true});
+                                        await reportingChannel.send({content: message});
                                     } else {
                                         await reportingChannel.send('Members are all synced');
                                     }
@@ -242,7 +232,7 @@ const rateLimitSeconds = 1;
                     }
                 }
                 else {
-                    if (message.channel.topic === 'application') {
+                    if (message.channel.type === 'GUILD_TEXT' && message.channel.topic === 'application') {
                         const usernameForChannel = message.channel.name.split('-').slice(1).join('-').replace('-', ' ');
                         if (usernameForChannel.toLocaleLowerCase() !== message.author.username.toLocaleLowerCase()) {
                             return;
@@ -252,10 +242,10 @@ const rateLimitSeconds = 1;
                             await message.channel.send(`Great! I will now send you a series of ${ApplicationQuestions.length} questions. Please respond to each one in a single message. This will be your application. The messages will be sent in this channel and you will respond to each one here by sending a message back.`)
                             if (process.env.AWAITING_APPROVAL_CHANNEL_ID) {
                                 await sendQuestions(message, server, client.channels.cache.get(process.env.AWAITING_APPROVAL_CHANNEL_ID));
-                            }                        }
+                            }
+                        }
                     }
                 }
-            }
         });
 
         client.on('messageReactionAdd', async (reaction, user) => {
@@ -272,11 +262,11 @@ const rateLimitSeconds = 1;
                 if (reaction.emoji.name === emoji) {
                     const server = client.guilds.cache.find(guild => guild.id === serverId);
                     if (server) {
-                        const guildMember = server.member(user as User);
+                        const guildMember = server.members.cache.get(user.id);
                         if (guildMember) {
                             const fetchedMember = await guildMember.fetch();
                             // cant create an application channel if you already have a role
-                            if (fetchedMember?.roles.cache.array().filter(x => x.name !== '@everyone').length) {
+                            if ([...fetchedMember?.roles.cache.values()].filter(x => x.name !== '@everyone').length) {
                                 await reaction.users.remove(user as User);
                                 return;
                             }

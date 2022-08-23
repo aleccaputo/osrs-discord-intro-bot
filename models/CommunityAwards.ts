@@ -1,3 +1,4 @@
+/*
 import {Schema, Document, model, Model} from 'mongoose';
 
 interface ICommunityAwardAnswer {
@@ -20,4 +21,4 @@ const CommunityAwardsSchema = new Schema({
 
 const CommunityAwards: Model<ICommunityAward> = model('CommunityAwards', CommunityAwardsSchema, '2021Nominations');
 
-export default CommunityAwards;
+export default CommunityAwards;*/

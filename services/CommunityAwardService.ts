@@ -1,3 +1,4 @@
+/*
 import CommunityAwards, {ICommunityAward} from '../models/CommunityAwards';
 import {Guild, Message, MessageCollector, TextChannel} from "discord.js";
 import {AwardQuestions} from "./constants/award-questions";
@@ -94,14 +95,14 @@ export const reportCurrentVotes = async () => {
 
     AwardQuestions.forEach((x) => {
         const nominations = countedNominations.filter(nom => nom.questionId === x.order);
-/*      const winner = nominations?.reduce((prev, current) => (prev.count > current.count) ? prev : current, nominations[0]);
+/!*      const winner = nominations?.reduce((prev, current) => (prev.count > current.count) ? prev : current, nominations[0]);
         if (winner) {
             formattedString += `\n**${x.question}?**\n${winner.answer}: ${winner.count} votes!\n`;
-        }*/
+        }*!/
         formattedString += `\n**${x.question}?**\n`;
         nominations.sort((a, b) => b.count - a.count).forEach(nomination => {
             formattedString += `${nomination.answer}: ${nomination.count}\n`;
         });
     });
     return formattedString;
-}
+}*/

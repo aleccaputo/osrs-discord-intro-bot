@@ -1,4 +1,4 @@
-import {Channel, Emoji, Guild, Message, MessageReaction, PartialUser, TextChannel, User} from "discord.js";
+import {AnyChannel, Channel, Emoji, Guild, Message, MessageReaction, PartialMessageReaction, PartialUser, TextChannel, User} from "discord.js";
 import {getUser, modifyNicknamePoints, modifyPoints} from "./UserService";
 import {NicknameLengthException} from "../exceptions/NicknameLengthException";
 
@@ -64,9 +64,9 @@ export enum PointsAction {
     SUBTRACT = 'subtract'
 }
 
-export const extractMessageInformationAndProcessPoints = async (reaction: MessageReaction, server?: Guild, privateSubmissionsChannel?: Channel, pointsAction: PointsAction = PointsAction.ADD, clientId?: string, user?: User | PartialUser) => {
+export const extractMessageInformationAndProcessPoints = async (reaction: MessageReaction | PartialMessageReaction, server?: Guild, privateSubmissionsChannel?: AnyChannel, pointsAction: PointsAction = PointsAction.ADD, clientId?: string, user?: User | PartialUser) => {
     const message = await reaction.message.fetch();
-    const hasReaction = message.reactions.cache.some(x => x.users.cache.filter(y => y.id !== clientId).array().length > 1);
+    const hasReaction = message.reactions.cache.some(x => [...x.users.cache.filter(y => y.id !== clientId).values()].length > 1);
     if (hasReaction && user && pointsAction === PointsAction.ADD) {
         await reaction.users.remove(user as User);
         return;
@@ -76,7 +76,7 @@ export const extractMessageInformationAndProcessPoints = async (reaction: Messag
     }
     const userId = message.content.replace('<@', '').slice(0, -1);
     const points = await processPoints(reaction.emoji, userId, pointsAction);
-    const serverMember = server?.member(userId);
+    const serverMember = server?.members.cache.get(userId);
     if (points && privateSubmissionsChannel && privateSubmissionsChannel.isText()) {
         try {
             await privateSubmissionsChannel.send(`<@${userId}> now has ${points} points`);
