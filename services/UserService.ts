@@ -41,14 +41,11 @@ export const modifyPoints = async ( user: IUser | null, pointValue: number, acti
 }
 
 export const modifyNicknamePoints = async (newPoints: number, serverMember: GuildMember | null | undefined) => {
-    console.log(`server member: ${serverMember}`);
     if (serverMember) {
         const containsBracketsRe = /.*\[.*\].*/;
         const nickname = serverMember.nickname;
-        console.log(`nickname before: ${nickname}`);
         if (nickname) {
             const newNickname = containsBracketsRe.test(nickname) ? nickname.replace(/\[(.+?)\]/g, `[${newPoints}]`) : `${nickname} [${newPoints}]`;
-            console.log(`nickname after: ${newNickname}`);
             if (nickname.length > 32) {
                 throw new NicknameLengthException('Nickname is more than 32 characters');
             } else {

@@ -195,11 +195,9 @@ const rateLimitSeconds = 1;
                             if (user) {
                                 const newPoints = await modifyPoints(user, pointNumber, operator === '+' ? PointsAction.ADD : PointsAction.SUBTRACT);
                                 if (newPoints) {
-                                    console.log(`new points ${newPoints}`);
                                     await adminChannel.send(`${formatDiscordUserTag(userId)} now has ${newPoints} points`);
-                                    const serverMember = server.members.cache.get(user.id);
+                                    const serverMember = server.members.cache.get(userId);
                                     try {
-                                        console.log("about to modify nickname points")
                                         await modifyNicknamePoints(newPoints, serverMember)
                                     } catch (e) {
                                         console.log(e);
