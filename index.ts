@@ -196,10 +196,11 @@ const rateLimitSeconds = 1;
                                 const newPoints = await modifyPoints(user, pointNumber, operator === '+' ? PointsAction.ADD : PointsAction.SUBTRACT);
                                 if (newPoints) {
                                     await adminChannel.send(`${formatDiscordUserTag(userId)} now has ${newPoints} points`);
-                                    const serverMember = server.members.cache.get(user.id);;
+                                    const serverMember = server.members.cache.get(user.id);
                                     try {
                                         await modifyNicknamePoints(newPoints, serverMember)
                                     } catch (e) {
+                                        console.log(e);
                                         if (e instanceof NicknameLengthException) {
                                             await adminChannel.send('Nickname is either too long or will be too long. Must be less than or equal to 32 characters.')
                                             return;
