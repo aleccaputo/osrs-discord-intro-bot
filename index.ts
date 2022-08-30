@@ -135,6 +135,7 @@ const rateLimitSeconds = 1;
                     else {
                         console.log('submissions channel');
                         const publicSubmissionsChannel = client.channels.cache.get(process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID ?? '');
+                        console.log(`message: ${message}`);
                         const {command} = parseServerCommand(message.content);
                         console.log(command);
                         if (command === 'mypoints') {

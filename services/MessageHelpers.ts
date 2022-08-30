@@ -7,6 +7,7 @@ interface IServerCommand {
 }
 
 export const parseServerCommand = (content: string): IServerCommand => {
+    console.log(`content: ${content}`)
     const normalized = content.toLocaleLowerCase().trim();
     const splitMessage = normalized ? normalized.split(' ') : [];
     if (!splitMessage[0] || splitMessage[0] !== serverCommand) {
