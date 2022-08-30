@@ -62,6 +62,7 @@ const rateLimitSeconds = 1;
         });
 
         client.on('messageCreate', async (message) => {
+            console.log('got a message!');
             // don't respond to messages from self
             if (message.author.id === client.user?.id) {
                 return;
@@ -132,8 +133,10 @@ const rateLimitSeconds = 1;
                         await reactWithBasePoints(privateMessage);
                     }
                     else {
+                        console.log('submissions channel');
                         const publicSubmissionsChannel = client.channels.cache.get(process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID ?? '');
                         const {command} = parseServerCommand(message.content);
+                        console.log(command);
                         if (command === 'mypoints') {
                             // rate limit any requests that are checking non-discord apis (ie internal storage)
                             if (lastRequestForPointsTime && message.createdTimestamp - (rateLimitSeconds * 1000) < lastRequestForPointsTime) {
