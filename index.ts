@@ -176,8 +176,8 @@ const rateLimitSeconds = 1;
                             }
                         }
                     }
-                } else if (message.channel.id === process.env.ADMIN_CHANNEL_ID) {
-                    const adminChannel = client.channels.cache.get(process.env.ADMIN_CHANNEL_ID);
+                } else if (message.channel.id === process.env.REPORTING_CHANNEL_ID) {
+                    const modChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
                     const {command, context, context2} = parseServerCommand(message.content);
                     // format: !serverCommand modifyPoints @username +/-points
                     if (command === 'modifypoints') {
@@ -187,29 +187,29 @@ const rateLimitSeconds = 1;
                         }
                         lastRequestForPointsTime = message.createdTimestamp;
                         // do we have a value?
-                        if (context2 && adminChannel && adminChannel.type === ChannelType.GuildText) {
+                        if (context2 && modChannel && modChannel.type === ChannelType.GuildText) {
                             const operator = context2.charAt(0);
                             const userId = stripDiscordCharactersFromId(context ?? '');
                             const pointNumber = parseInt(context2.substring(1), 10);
                             if (operator !== '+' && operator !== '-' || !userId) {
-                                await adminChannel.send('Invalid command. Please user the form `!chill modifyPoints @discordNickname +10` or to subtract `-10`');
+                                await modChannel.send('Invalid command. Please user the form `!chill modifyPoints @discordNickname +10` or to subtract `-10`');
                                 return;
                             }
                             const user = await getUser(userId);
                             if (user) {
                                 const newPoints = await modifyPoints(user, pointNumber, operator === '+' ? PointsAction.ADD : PointsAction.SUBTRACT);
                                 if (newPoints) {
-                                    await adminChannel.send(`${formatDiscordUserTag(userId)} now has ${newPoints} points`);
+                                    await modChannel.send(`${formatDiscordUserTag(userId)} now has ${newPoints} points`);
                                     const serverMember = server.members.cache.get(userId);
                                     try {
                                         await modifyNicknamePoints(newPoints, serverMember)
                                     } catch (e) {
                                         console.log(e);
                                         if (e instanceof NicknameLengthException) {
-                                            await adminChannel.send('Nickname is either too long or will be too long. Must be less than or equal to 32 characters.')
+                                            await modChannel.send('Nickname is either too long or will be too long. Must be less than or equal to 32 characters.')
                                             return;
                                         } else {
-                                            await adminChannel.send(`Unable to set points or modify nickname for <@${userId}>`);
+                                            await modChannel.send(`Unable to set points or modify nickname for <@${userId}>`);
                                             return;
                                         }
                                     }
