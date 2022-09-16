@@ -3,6 +3,7 @@ import {ChannelType, GatewayIntentBits, Partials, User} from 'discord.js';
 import * as dotenv from 'dotenv';
 import {
     initializeReportMembersEligibleForPointsBasedRankUp,
+    scheduleNicknameIdCsvExtract,
     scheduleReportMembersEligibleForRankUp,
     scheduleReportMembersNotInClan,
     scheduleUserCsvExtract,
@@ -56,6 +57,7 @@ const rateLimitSeconds = 1;
                 scheduleReportMembersNotInClan(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.NOT_IN_CLAN_ROLE_ID ?? '');
                 scheduleWomUpdateAll(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
                 scheduleUserCsvExtract(client, process.env.ADMIN_CHANNEL_ID ?? '', serverId ?? '');
+                await scheduleNicknameIdCsvExtract(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
             } catch (e) {
                 console.error(e);
                 console.error("failed to initialize reporting tasks");
@@ -63,7 +65,6 @@ const rateLimitSeconds = 1;
         });
 
         client.on('messageCreate', async (message) => {
-            console.log('got a message!');
             // don't respond to messages from self
             if (message.author.id === client.user?.id) {
                 return;

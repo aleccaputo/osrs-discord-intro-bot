@@ -163,6 +163,51 @@ export const initializeWomUpdateAll = async (client: Client, reportingChannelId:
     }
 }
 
+export const initializeDiscordIdToNicknameCsvExtract = async (client: Client, reportingChannelId: string, serverId: string) => {
+    if (mongoose.connection.readyState === 0) {
+        await connect();
+    }
+    const server = client.guilds.cache.find(guild => guild.id === serverId);
+    const year = dayjs().year();
+    const month = dayjs().month();
+    const day = dayjs().date()
+    const filename = `${year}_${month + 1}_${day}_discordId_nickname_extract.csv`
+    console.log('generating' + filename);
+
+    const writeStream = fs.createWriteStream(`./${filename}`, {flags: 'w+'});
+    try {
+        if (server) {
+            const currentMembers = await server.members.fetch();
+            const stream = fastcsv.format({headers: true});
+            stream.pipe(writeStream);
+            currentMembers.map(member => stream.write({nickname: member.nickname ?? member.user.username ?? '', id: member.id.toString()}));
+
+            writeStream.on('close', async () => {
+                if (server) {
+                    const reportingChannel = client.channels.cache.get(reportingChannelId);
+                    if (reportingChannel && reportingChannel.type === ChannelType.GuildText) {
+                        try {
+                            await reportingChannel.send({
+                                content: 'Nickname/discordId csv generated.',
+                                files: [{
+                                    attachment: `./${filename}`,
+                                    name: filename
+                                }]
+                            });
+                        } catch (e) {
+                            console.log(e);
+                        }
+                    }
+                }
+            });
+            writeStream.end();
+        }
+    } catch (e) {
+        console.error('Error creating nicname/id csv for' + filename);
+        writeStream.end();
+    }
+}
+
 export const initializeUserCsvExtract = async (client: Client, adminChannelId: string, serverId: string) => {
     if (mongoose.connection.readyState === 0) {
         await connect();
@@ -244,4 +289,12 @@ export const scheduleUserCsvExtract = (client: Client, adminChannelId: string, s
             console.log(e);
         }
     });
+}
+
+export const scheduleNicknameIdCsvExtract = async (client: Client, reportingChannelId: string, serverId: string) => {
+    try {
+        await initializeDiscordIdToNicknameCsvExtract(client, reportingChannelId, serverId)
+    } catch (e) {
+        console.log(e);
+    }
 }
