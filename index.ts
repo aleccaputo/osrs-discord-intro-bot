@@ -57,7 +57,7 @@ const rateLimitSeconds = 1;
                 scheduleReportMembersNotInClan(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.NOT_IN_CLAN_ROLE_ID ?? '');
                 scheduleWomUpdateAll(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
                 scheduleUserCsvExtract(client, process.env.ADMIN_CHANNEL_ID ?? '', serverId ?? '');
-                await scheduleNicknameIdCsvExtract(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
+                scheduleNicknameIdCsvExtract(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
             } catch (e) {
                 console.error(e);
                 console.error("failed to initialize reporting tasks");
