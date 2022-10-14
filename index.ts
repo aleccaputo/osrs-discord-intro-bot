@@ -43,7 +43,8 @@ const rateLimitSeconds = 1;
                 GatewayIntentBits.GuildMessageReactions,
                 GatewayIntentBits.GuildMessages,
                 GatewayIntentBits.MessageContent,
-                GatewayIntentBits.Guilds
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.DirectMessages
             ],
             partials: [Partials.User, Partials.Reaction, Partials.Message]
         });
