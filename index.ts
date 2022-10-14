@@ -251,10 +251,8 @@ const rateLimitSeconds = 1;
                             }
                         }
                     } else if (command === 'nominate-test') {
-                        const members = await server.members.fetch();
-                        const me = members.find(x => x.id === '178263766251732993');
-                        if (me) {
-                            await me.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
+                        if (message.author) {
+                            await message.author.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
                         }
                     }
                 }
