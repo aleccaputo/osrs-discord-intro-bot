@@ -1,4 +1,3 @@
-/*
 import CommunityAwards, {ICommunityAward} from '../models/CommunityAwards';
 import {Guild, Message, MessageCollector, TextChannel} from "discord.js";
 import {AwardQuestions} from "./constants/award-questions";
@@ -8,7 +7,8 @@ export const sendAwardQuestions = async (message: Message, server: Guild) => {
     let questionCounter = 0;
     // assert the person sending the response is the same we sent the application to.
     const questionFilter = (m: Message) => m.author.id === message.author.id;
-    const collector = new MessageCollector(message.channel as TextChannel, questionFilter, {
+    const collector = new MessageCollector(message.channel as TextChannel, {
+        filter: questionFilter,
         max: AwardQuestions.length,
         idle: 300000
     });
@@ -23,7 +23,7 @@ export const sendAwardQuestions = async (message: Message, server: Guild) => {
             await message.channel.send('You took too long to respond. To restart your application, use the command `!chill nominate` to start again.');
             return;
         }
-        const collectedArray = collected.array().map(x => x.toString());
+        const collectedArray =  [...collected.values()].map(x => x.toString());
 
         const authorId = message.author.id;
 
@@ -95,14 +95,14 @@ export const reportCurrentVotes = async () => {
 
     AwardQuestions.forEach((x) => {
         const nominations = countedNominations.filter(nom => nom.questionId === x.order);
-/!*      const winner = nominations?.reduce((prev, current) => (prev.count > current.count) ? prev : current, nominations[0]);
+/*        const winner = nominations?.reduce((prev, current) => (prev.count > current.count) ? prev : current, nominations[0]);
         if (winner) {
             formattedString += `\n**${x.question}?**\n${winner.answer}: ${winner.count} votes!\n`;
-        }*!/
+        }*/
         formattedString += `\n**${x.question}?**\n`;
         nominations.sort((a, b) => b.count - a.count).forEach(nomination => {
             formattedString += `${nomination.answer}: ${nomination.count}\n`;
         });
     });
     return formattedString;
-}*/
+}

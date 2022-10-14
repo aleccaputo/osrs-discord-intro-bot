@@ -1,4 +1,3 @@
-/*
 import {Schema, Document, model, Model} from 'mongoose';
 
 interface ICommunityAwardAnswer {
@@ -11,7 +10,7 @@ export interface ICommunityAward extends Document {
     answers: Array<ICommunityAwardAnswer>
 }
 
-const CommunityAwardsSchema = new Schema({
+const CommunityAwardsSchema = new Schema<ICommunityAward>({
     discordId: {
         type: String,
         required: true,
@@ -19,6 +18,6 @@ const CommunityAwardsSchema = new Schema({
     answers: [Schema.Types.Mixed]
 });
 
-const CommunityAwards: Model<ICommunityAward> = model('CommunityAwards', CommunityAwardsSchema, '2021Nominations');
+const CommunityAwards: Model<ICommunityAward> = model('CommunityAwards', CommunityAwardsSchema, '2022Nominations');
 
-export default CommunityAwards;*/
+export default CommunityAwards;

@@ -24,6 +24,8 @@ import {formatSyncMessage, getConsolidatedMemberDifferencesAsync} from "./servic
 import {NicknameLengthException} from "./exceptions/NicknameLengthException";
 import {UserExistsException} from "./exceptions/UserExistsException";
 import {createPointsLeaderboard} from "./services/RankService";
+import { ensureUniqueAnswers, sendAwardQuestions } from './services/CommunityAwardService';
+import { AwardQuestions } from './services/constants/award-questions';
 
 dotenv.config();
 let lastRequestForPointsTime: number | null = null;
@@ -75,6 +77,18 @@ const rateLimitSeconds = 1;
                 return;
             }
             const mods = server.members.cache.filter(member => member.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID));
+            if (message.channel.type === ChannelType.DM) {
+                const {command, context} = parseServerCommand(message.content);
+                if (command === 'nominate') {
+                    const existingEntry = await ensureUniqueAnswers(message.author.id);
+                    if (existingEntry) {
+                        await message.channel.send(`You have already voted this year, thank you!`);
+                        return;
+                    }
+                    await message.channel.send(`Great! I will now send you a series of ${AwardQuestions.length} questions. Please respond to each one with your nominee's OSRS name **EXACTLY AS IT APPEARS IN DISCORD without the point numbers or brackets ie MrPooter [150] would just be MrPooter**.\nFor example, if the bot sends you "Best pvmer", you could respond: MrPooter.\n After sending the name, please wait for the next question to be dmed to you.`)
+                    sendAwardQuestions(message, server);
+                }
+            }
             // Accept application for user. must be from a mod and in this channel
             if (message.channel.id === process.env.AWAITING_APPROVAL_CHANNEL_ID) {
                 const {command, context} = parseServerCommand(message.content);
@@ -234,6 +248,12 @@ const rateLimitSeconds = 1;
                                     await reportingChannel.send('Error syncing members');
                                 }
                             }
+                        }
+                    } else if (command === 'nominate-test') {
+                        const members = await server.members.fetch();
+                        const me = members.find(x => x.id === '178263766251732993');
+                        if (me) {
+                            await me.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
                         }
                     }
                 }

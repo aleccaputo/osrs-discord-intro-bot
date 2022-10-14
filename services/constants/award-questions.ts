@@ -21,7 +21,7 @@ export const AwardQuestions: Array<IAwardQuestion> = [
         order: 4
     },
     {
-        question: 'Favorite Newcomer(joined in 2021)',
+        question: 'Favorite Newcomer(joined in 2022)',
         order: 5
     },
     {
@@ -89,7 +89,7 @@ export const AwardQuestions: Array<IAwardQuestion> = [
         order: 22
     },
     {
-        question: 'Biggest Tool of 2021',
+        question: 'Biggest Tool of 2022',
         order: 23
     },
     {
