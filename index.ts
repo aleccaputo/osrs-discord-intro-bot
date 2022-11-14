@@ -139,7 +139,11 @@ const rateLimitSeconds = 1;
                         const members = await server.members.fetch();
                         // string is the guest id
                         members.filter(x => x.roles.cache.has(process.env.VERIFIED_ROLE_ID ?? '') && !x.roles.cache.has('845269499892203560') && !x.roles.cache.has('526483512916836352')).forEach(member => {
-                            member.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
+                            try {
+                                member.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
+                            } catch (e) {
+                                console.log("unable to send nomination", e);
+                            }
                         });
                     }
                 // handle forwarding drop submissions to private channel
