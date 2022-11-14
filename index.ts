@@ -138,13 +138,14 @@ const rateLimitSeconds = 1;
                     if (command === 'send-questions-to-all') {
                         const members = await server.members.fetch();
                         // string is the guest id
-                        members.filter(x => x.roles.cache.has(process.env.VERIFIED_ROLE_ID ?? '') && !x.roles.cache.has('845269499892203560') && !x.roles.cache.has('526483512916836352')).forEach(member => {
+                        const filteredMembers = members.filter(x => x.roles.cache.has(process.env.VERIFIED_ROLE_ID ?? '') && !x.roles.cache.has('845269499892203560') && !x.roles.cache.has('526483512916836352')).toJSON();
+                        for (const filteredMember of filteredMembers) {
                             try {
-                                member.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
+                                await filteredMember.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
                             } catch (e) {
-                                console.log("unable to send nomination", e);
+                                console.log(`unable to send nomination to ${filteredMember.id}`, e);
                             }
-                        });
+                        }
                     }
                 // handle forwarding drop submissions to private channel
                 } else if ((message.channel.id === process.env.PUBLIC_SUBMISSIONS_CHANNEL_ID || message.channel.id === process.env.BINGO_SUBMISSION_CHANNEL_ID) && process.env.PRIVATE_SUBMISSIONS_CHANNEL_ID) {
