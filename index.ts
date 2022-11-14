@@ -137,7 +137,8 @@ const rateLimitSeconds = 1;
                     const {command} = parseServerCommand(message.content);
                     if (command === 'send-questions-to-all') {
                         const members = await server.members.fetch();
-                        members.forEach(member => {
+                        // string is the guest id
+                        members.filter(x => x.roles.cache.has(process.env.VERIFIED_ROLE_ID ?? '') && !x.roles.cache.has('845269499892203560')).forEach(member => {
                             member.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
                         });
                     }
