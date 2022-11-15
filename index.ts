@@ -24,7 +24,7 @@ import {formatSyncMessage, getConsolidatedMemberDifferencesAsync} from "./servic
 import {NicknameLengthException} from "./exceptions/NicknameLengthException";
 import {UserExistsException} from "./exceptions/UserExistsException";
 import {createPointsLeaderboard} from "./services/RankService";
-import { ensureUniqueAnswers, sendAwardQuestions } from './services/CommunityAwardService';
+import {ensureUniqueAnswers, reportCurrentVotes, sendAwardQuestions} from './services/CommunityAwardService';
 import { AwardQuestions } from './services/constants/award-questions';
 
 dotenv.config();
@@ -144,6 +144,16 @@ const rateLimitSeconds = 1;
                                 await filteredMember.send("It is time for this year's ChillTopia Clan Awards! Respond `!chill nominate` to get started!");
                             } catch (e) {
                                 console.log(`unable to send nomination to ${filteredMember.id}`, e);
+                            }
+                        }
+                    } else if (command === 'report-votes') {
+                        const report = await reportCurrentVotes();
+                        const nominationChannel = client.channels.cache.get(process.env.NOMINATION_RESULTS_CHANNEL_ID);
+                        if (nominationChannel && nominationChannel.type === ChannelType.GuildText) {
+                            try {
+                                await nominationChannel.send(report);
+                            } catch (e) {
+                                console.log("unable to report on nominations", e)
                             }
                         }
                     }
