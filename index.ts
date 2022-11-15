@@ -25,7 +25,7 @@ import {NicknameLengthException} from "./exceptions/NicknameLengthException";
 import {UserExistsException} from "./exceptions/UserExistsException";
 import {createPointsLeaderboard} from "./services/RankService";
 import {ensureUniqueAnswers, reportCurrentVotes, sendAwardQuestions} from './services/CommunityAwardService';
-import { AwardQuestions } from './services/constants/award-questions';
+import {AwardQuestions} from './services/constants/award-questions';
 
 dotenv.config();
 let lastRequestForPointsTime: number | null = null;
@@ -46,7 +46,7 @@ const rateLimitSeconds = 1;
                 GatewayIntentBits.Guilds,
                 GatewayIntentBits.DirectMessages
             ],
-            partials: [Partials.User, Partials.Reaction, Partials.Message]
+            partials: [Partials.User, Partials.Reaction, Partials.Message, Partials.Channel]
         });
 
         await client.login(process.env.TOKEN);
@@ -75,13 +75,11 @@ const rateLimitSeconds = 1;
             }
             const server = client.guilds.cache.find(guild => guild.id === serverId);
             if (!server) {
-                console.log('should not be here!');
                 await message.channel.send("Looks like you're not in the server.")
                 return;
             }
             const mods = server.members.cache.filter(member => member.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID));
             if (message.channel.type === ChannelType.DM) {
-                console.log('a dm!');
                 const {command, context} = parseServerCommand(message.content);
                 console.log(command);
                 if (command === 'nominate') {
@@ -94,7 +92,6 @@ const rateLimitSeconds = 1;
                     sendAwardQuestions(message, server);
                 }
             }
-            console.log('i guess not a dm');
             // Accept application for user. must be from a mod and in this channel
             if (message.channel.id === process.env.AWAITING_APPROVAL_CHANNEL_ID) {
                 const {command, context} = parseServerCommand(message.content);
