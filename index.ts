@@ -69,17 +69,21 @@ const rateLimitSeconds = 1;
 
         client.on('messageCreate', async (message) => {
             // don't respond to messages from self
+            console.log('messageCreated');
             if (message.author.id === client.user?.id) {
                 return;
             }
             const server = client.guilds.cache.find(guild => guild.id === serverId);
             if (!server) {
+                console.log('should not be here!');
                 await message.channel.send("Looks like you're not in the server.")
                 return;
             }
             const mods = server.members.cache.filter(member => member.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID));
             if (message.channel.type === ChannelType.DM) {
+                console.log('a dm!');
                 const {command, context} = parseServerCommand(message.content);
+                console.log(command);
                 if (command === 'nominate') {
                     const existingEntry = await ensureUniqueAnswers(message.author.id);
                     if (existingEntry) {
@@ -90,6 +94,7 @@ const rateLimitSeconds = 1;
                     sendAwardQuestions(message, server);
                 }
             }
+            console.log('i guess not a dm');
             // Accept application for user. must be from a mod and in this channel
             if (message.channel.id === process.env.AWAITING_APPROVAL_CHANNEL_ID) {
                 const {command, context} = parseServerCommand(message.content);
