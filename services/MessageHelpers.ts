@@ -37,7 +37,7 @@ export const splitMessage = (message: string, size: number) => {
     const chunks = new Array(numChunks)
 
     for (let i = 0, c = 0; i < numChunks; ++i, c += size) {
-        chunks[i] = message.slice(c, size)
+        chunks[i] = message.substr(c, size)
     }
 
     return chunks
