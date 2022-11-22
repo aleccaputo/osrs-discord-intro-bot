@@ -11,7 +11,12 @@ import {
 } from "./services/ReportingService";
 import {ApplicationQuestions} from "./services/constants/application-questions";
 import {createApplicationChannel, sendQuestions} from "./services/ApplicationService";
-import {formatDiscordUserTag, parseServerCommand, stripDiscordCharactersFromId} from "./services/MessageHelpers";
+import {
+    formatDiscordUserTag,
+    parseServerCommand,
+    splitMessage,
+    stripDiscordCharactersFromId
+} from "./services/MessageHelpers";
 import {connect} from "./services/DataService";
 import {addMemberToWiseOldMan} from "./services/WiseOldManService";
 import {
@@ -153,7 +158,10 @@ const rateLimitSeconds = 1;
                         const nominationChannel = client.channels.cache.get(process.env.NOMINATION_RESULTS_CHANNEL_ID);
                         if (nominationChannel && nominationChannel.type === ChannelType.GuildText) {
                             try {
-                                await nominationChannel.send(report);
+                                const messageChunks = splitMessage(report, 2000);
+                                for (const chunk of messageChunks) {
+                                    await nominationChannel.send(chunk)
+                                }
                             } catch (e) {
                                 console.log("unable to report on nominations", e)
                             }

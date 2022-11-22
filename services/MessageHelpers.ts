@@ -30,3 +30,15 @@ export const parseServerCommand = (content: string): IServerCommand => {
 export const formatDiscordUserTag = (id: string) => `<@${id}>`
 
 export const stripDiscordCharactersFromId = (idString: string) => idString.replace(/[^0-9]/g, '');
+
+// https://techozu.com/how-to-split-messages-in-discord-js/
+export const splitMessage = (message: string, size: number) => {
+    const numChunks = Math.ceil(message.length / size)
+    const chunks = new Array(numChunks)
+
+    for (let i = 0, c = 0; i < numChunks; ++i, c += size) {
+        chunks[i] = message.slice(c, size)
+    }
+
+    return chunks
+}
