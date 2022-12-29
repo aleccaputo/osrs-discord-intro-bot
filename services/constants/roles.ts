@@ -89,7 +89,7 @@ export const PointsRoles: Array<PointsRole> = [
         name: 'Diamond',
         id: process.env.RANK_FIVE_ID ?? '5',
         minPoints: 400,
-        maxPoints: 500,
+        maxPoints: 600,
         order: 5,
         womName: 'diamond'
     },

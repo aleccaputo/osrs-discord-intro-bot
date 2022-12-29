@@ -19,11 +19,7 @@ const formatRankUpMessage = (members: Array<IMemberDueForRank<TimeRole | PointsR
     let message = 'We have some users ready to rank up!'
     members.forEach(member => {
         if (member) {
-            if (member.nextRank && member.nextRank?.name) {
-                message += `\n<@${member.userId}> -> ${member.nextRank.name}`
-            } else {
-                console.log(`weird no rank name error for ${JSON.stringify(member)}`);
-            }
+            message += `\n<@${member.userId}> -> ${member.nextRank.name}`
         }
     });
     console.log(message);
