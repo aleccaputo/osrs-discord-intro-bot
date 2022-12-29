@@ -74,7 +74,6 @@ const rateLimitSeconds = 1;
 
         client.on('messageCreate', async (message) => {
             // don't respond to messages from self
-            console.log('messageCreated');
             if (message.author.id === client.user?.id) {
                 return;
             }
