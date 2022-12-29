@@ -22,7 +22,7 @@ const formatRankUpMessage = (members: Array<IMemberDueForRank<TimeRole | PointsR
             if (member.nextRank && member.nextRank?.name) {
                 message += `\n<@${member.userId}> -> ${member.nextRank.name}`
             } else {
-                console.log(`weird no rank name error for ${member}`);
+                console.log(`weird no rank name error for ${JSON.stringify(member)}`);
             }
         }
     });
