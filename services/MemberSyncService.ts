@@ -1,22 +1,23 @@
 // used to sync discord members and the in game clan. Currently leverages wise old man
 import {Guild} from "discord.js";
-import {getGroupMembersAsync, WomMember} from "./WiseOldManService";
+import {getGroupMembersAsync} from "./WiseOldManService";
 import {TimeRoles} from "./constants/roles";
+import {MembershipWithPlayer, WOMClient} from "@wise-old-man/utils";
 
 interface IMemberSyncModel {
     isInGameLowerThanDiscord: boolean;
     discordId: string;
     higherRank: string;
 }
-export const getConsolidatedMemberDifferencesAsync = async (server: Guild): Promise<Array<IMemberSyncModel>> => {
+export const getConsolidatedMemberDifferencesAsync = async (server: Guild, womClient: WOMClient): Promise<Array<IMemberSyncModel>> => {
     const currentDiscordMembersPromise = server.members.fetch();
-    const currentWomMembersPromise = getGroupMembersAsync();
+    const currentWomMembersPromise = getGroupMembersAsync(womClient);
 
     const [discordMembers, womMembers] = await Promise.all([currentDiscordMembersPromise, currentWomMembersPromise]);
     const womDict = womMembers.reduce((result, filter) => {
-        result[filter.displayName.toLowerCase()] = filter;
+        result[filter.player.displayName.toLowerCase()] = filter;
         return result;
-    }, {} as Record<string, WomMember>);
+    }, {} as Record<string, MembershipWithPlayer>);
     const newModel: Array<IMemberSyncModel | null> = discordMembers.map(dm => {
         const womMember = womDict[dm.nickname?.toLowerCase() ?? dm.displayName.toLowerCase()];
         if (womMember) {

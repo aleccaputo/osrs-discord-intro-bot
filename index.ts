@@ -31,6 +31,7 @@ import {UserExistsException} from "./exceptions/UserExistsException";
 import {createPointsLeaderboard} from "./services/RankService";
 import {ensureUniqueAnswers, reportCurrentVotes, sendAwardQuestions} from './services/CommunityAwardService';
 import {AwardQuestions} from './services/constants/award-questions';
+import {WOMClient} from "@wise-old-man/utils";
 
 dotenv.config();
 let lastRequestForPointsTime: number | null = null;
@@ -57,13 +58,14 @@ const rateLimitSeconds = 1;
         await client.login(process.env.TOKEN);
         await connect();
 
+        const womClient = new WOMClient();
+
         client.once('ready', async () => {
             console.log('ready');
             try {
                 scheduleReportMembersEligibleForRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
-                await initializeReportMembersEligibleForPointsBasedRankUp(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
                 scheduleReportMembersNotInClan(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', process.env.NOT_IN_CLAN_ROLE_ID ?? '');
-                scheduleWomUpdateAll(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
+                scheduleWomUpdateAll(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '', womClient);
                 scheduleUserCsvExtract(client, process.env.ADMIN_CHANNEL_ID ?? '', serverId ?? '');
                 scheduleNicknameIdCsvExtract(client, process.env.REPORTING_CHANNEL_ID ?? '', serverId ?? '');
             } catch (e) {
@@ -130,7 +132,7 @@ const rateLimitSeconds = 1;
                                 }
                             }
                             if (ign) {
-                                const response = await addMemberToWiseOldMan(ign);
+                                const response = await addMemberToWiseOldMan(ign, womClient);
                                 if (!response) {
                                     mods.forEach(mod => mod.send(`Unable to add <@${message.author.id}> to wise old man.`));
                                 }
@@ -262,7 +264,7 @@ const rateLimitSeconds = 1;
                             const reportingChannel = client.channels.cache.get(process.env.REPORTING_CHANNEL_ID);
                             if (reportingChannel && reportingChannel.type === ChannelType.GuildText) {
                                 try {
-                                    const syncedReport = await getConsolidatedMemberDifferencesAsync(server);
+                                    const syncedReport = await getConsolidatedMemberDifferencesAsync(server, womClient);
                                     if (syncedReport.length) {
                                         const message = formatSyncMessage(syncedReport);
                                         await reportingChannel.send({content: message});
