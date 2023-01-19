@@ -9,6 +9,7 @@ import User from "../models/User";
 import {updateAllMembers} from "./WiseOldManService";
 import fs from "fs";
 import * as fastcsv from 'fast-csv';
+import {WOMClient} from "@wise-old-man/utils";
 
 interface IMemberDueForRank<T> {
     userId: string;
@@ -146,14 +147,14 @@ export const initializeReportMembersEligibleForPointsBasedRankUp = async (client
     }
 }
 
-export const initializeWomUpdateAll = async (client: Client, reportingChannelId: string, serverId: string) => {
+export const initializeWomUpdateAll = async (client: Client, reportingChannelId: string, serverId: string, womClient: WOMClient) => {
     console.log('Kicking wom update all...');
     const server = client.guilds.cache.find(guild => guild.id === serverId);
     if (server) {
         const reportingChannel = client.channels.cache.get(reportingChannelId);
         if (reportingChannel && reportingChannel.type === ChannelType.GuildText) {
             try {
-                await updateAllMembers();
+                await updateAllMembers(womClient);
                 await reportingChannel.send("All members in WOM have been updated.");
             } catch (e) {
                 console.log(e);
@@ -271,10 +272,10 @@ export const scheduleReportMembersNotInClan = (client: Client, reportingChannelI
     });
 }
 
-export const scheduleWomUpdateAll = (client: Client, reportingChannelId: string, serverId: string) => {
+export const scheduleWomUpdateAll = (client: Client, reportingChannelId: string, serverId: string, womClient: WOMClient) => {
     schedule('0 16 */2 * *',  async () => {
         try {
-            await initializeWomUpdateAll(client, reportingChannelId, serverId);
+            await initializeWomUpdateAll(client, reportingChannelId, serverId, womClient);
         } catch (e) {
             console.log(e);
         }
