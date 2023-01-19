@@ -1,7 +1,9 @@
 import fetch from "node-fetch";
 import {WOMClient, GroupMemberFragment, MembershipWithPlayer} from "@wise-old-man/utils";
 
-export const addMemberToWiseOldMan = async (inGameName: string, womClient: WOMClient): Promise<boolean | null> => {
+const womClient = new WOMClient();
+
+export const addMemberToWiseOldMan = async (inGameName: string): Promise<boolean | null> => {
     if (!process.env.WISE_OLD_MAN_GROUP_ID || !process.env.WISE_OLD_MAN_VERIFICATION_CODE) {
         return null;
     }
@@ -21,7 +23,7 @@ export const addMemberToWiseOldMan = async (inGameName: string, womClient: WOMCl
     }
 }
 
-export const getGroupMembersAsync = async (womClient: WOMClient): Promise<Array<MembershipWithPlayer>> => {
+export const getGroupMembersAsync = async (): Promise<Array<MembershipWithPlayer>> => {
     if (!process.env.WISE_OLD_MAN_GROUP_ID) {
         console.error('No WOM group id set')
         throw new Error('WOM values not initialized');
@@ -35,7 +37,7 @@ export const getGroupMembersAsync = async (womClient: WOMClient): Promise<Array<
     }
 }
 
-export const updateAllMembers = async (womClient: WOMClient): Promise<void> => {
+export const updateAllMembers = async (): Promise<void> => {
     if (!process.env.WISE_OLD_MAN_GROUP_ID || !process.env.WISE_OLD_MAN_VERIFICATION_CODE) {
         console.error('No WOM group id set')
         throw new Error('WOM values not initialized');
