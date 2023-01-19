@@ -7,6 +7,7 @@ import {getUser, modifyNicknamePoints, modifyPoints} from "../services/UserServi
 import {PointsAction} from "../services/DropSubmissionService";
 import {formatDiscordUserTag} from "../services/MessageHelpers";
 import {NicknameLengthException} from "../exceptions/NicknameLengthException";
+import {isModRank} from "../utilities";
 
 export const command = {
     data: new SlashCommandBuilder()
@@ -24,13 +25,14 @@ export const command = {
         const discordUser = interaction.options.getMember('user') as GuildMember | null;
         const action = interaction.options.getString('action');
         const points = interaction.options.getInteger('points');
-        const isMod = (interaction.member as GuildMember)?.roles.cache.some(r => r.id === process.env.MOD_ROLE_ID || r.id === process.env.OWNER_ROLE_ID || r.id === process.env.CO_OWNER_ROLE_ID || r.id === process.env.ADMIN_ROLE_ID);
+        const isMod = isModRank(interaction.member as GuildMember);
+
         if (!isMod) {
             await interaction.reply('Insufficient privileges to run this command.');
             return;
         }
 
-        if (discordUser && points && action && discordUser) {
+        if (discordUser && points && action && discordUser && isMod) {
             const user = discordUser?.id ? await getUser(discordUser?.id) : null;
             const newPoints = await modifyPoints(user, points, action === '+' ? PointsAction.ADD : PointsAction.SUBTRACT);
             if (newPoints) {

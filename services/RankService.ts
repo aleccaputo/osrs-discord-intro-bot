@@ -9,9 +9,13 @@ export const createPointsLeaderboard = async (guild?: Guild) => {
     }
     // db always tracks user but we only want to display users still in the discord server
     const users = await getUsersByPointsDesc();
-    const usersWhoAreStillInServer = users.filter(x => {
-        const guildMember = guild.members.cache.get(x.discordId);
-        return Boolean(guildMember);
+    const usersWhoAreStillInServer = users.filter(async (x) => {
+        try {
+            const guildMember = await guild.members.fetch(x.discordId);
+            return Boolean(guildMember);
+        } catch (e) {
+            return false;
+        }
     })
     const topTenUsers = usersWhoAreStillInServer.slice(0, 20);
     const formatted = topTenUsers.map((x, idx) => `${convertNumberToEmoji(idx + 1) ?? idx + 1} ${formatDiscordUserTag(x.discordId)}: ${x.points} points`)

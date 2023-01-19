@@ -2,16 +2,16 @@
 import {Guild} from "discord.js";
 import {getGroupMembersAsync} from "./WiseOldManService";
 import {TimeRoles} from "./constants/roles";
-import {MembershipWithPlayer, WOMClient} from "@wise-old-man/utils";
+import {MembershipWithPlayer} from "@wise-old-man/utils";
 
 interface IMemberSyncModel {
     isInGameLowerThanDiscord: boolean;
     discordId: string;
     higherRank: string;
 }
-export const getConsolidatedMemberDifferencesAsync = async (server: Guild, womClient: WOMClient): Promise<Array<IMemberSyncModel>> => {
+export const getConsolidatedMemberDifferencesAsync = async (server: Guild): Promise<Array<IMemberSyncModel>> => {
     const currentDiscordMembersPromise = server.members.fetch();
-    const currentWomMembersPromise = getGroupMembersAsync(womClient);
+    const currentWomMembersPromise = getGroupMembersAsync();
 
     const [discordMembers, womMembers] = await Promise.all([currentDiscordMembersPromise, currentWomMembersPromise]);
     const womDict = womMembers.reduce((result, filter) => {
