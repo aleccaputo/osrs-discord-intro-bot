@@ -59,6 +59,7 @@ export const command = {
                 }
                 return;
             }
+            await interaction.reply(`<@${discordUser?.id} successfully added!`);
         }
     }
 };
