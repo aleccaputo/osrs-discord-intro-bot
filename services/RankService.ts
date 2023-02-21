@@ -10,9 +10,10 @@ export const createPointsLeaderboard = async (guild?: Guild) => {
     }
     // db always tracks user but we only want to display users still in the discord server
     const users = await getUsersByPointsDesc();
+    const members = await guild.members.fetch();
     const usersWhoAreStillInServer = users.filter(async (x) => {
         try {
-            const guildMember = await guild.members.fetch(x.discordId);
+            const guildMember = members.find(y => y.id === x.id);
             if (Boolean(guildMember)) {
                 return hasMemberRole(guildMember);
             }
