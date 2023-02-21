@@ -2,6 +2,7 @@ import {EmbedField, Guild} from "discord.js";
 import {getUsersByPointsDesc} from "./UserService";
 import {formatDiscordUserTag} from "./MessageHelpers";
 import {convertNumberToEmoji} from "./DropSubmissionService";
+import {hasMemberRole} from "../utilities";
 
 export const createPointsLeaderboard = async (guild?: Guild) => {
     if (!guild) {
@@ -12,7 +13,10 @@ export const createPointsLeaderboard = async (guild?: Guild) => {
     const usersWhoAreStillInServer = users.filter(async (x) => {
         try {
             const guildMember = await guild.members.fetch(x.discordId);
-            return Boolean(guildMember);
+            if (Boolean(guildMember)) {
+                return hasMemberRole(guildMember);
+            }
+            return false;
         } catch (e) {
             return false;
         }
