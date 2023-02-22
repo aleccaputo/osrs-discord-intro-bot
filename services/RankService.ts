@@ -14,8 +14,9 @@ export const createPointsLeaderboard = async (guild?: Guild) => {
     const usersWhoAreStillInServer = users.filter(async (x) => {
         try {
             const guildMember = members.find(y => y.id === x.discordId);
-            if (Boolean(guildMember)) {
-                return hasMemberRole(guildMember);
+            const currentGuildMember = await guildMember?.fetch(true);
+            if (Boolean(currentGuildMember)) {
+                return hasMemberRole(currentGuildMember);
             }
             return false;
         } catch (e) {
